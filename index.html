@@ -43,7 +43,20 @@
     <div class="row"><span class="k">last tx</span><span class="v" id="s_tx">—</span></div>
   </div>
   <div id="status"></div>
-  <div id="actions"><button id="btn_connect" disabled>connect wallet</button></div>
+  <div id="actions" style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;align-items:center;">
+    <button id="btn_connect"  disabled>connect (default / Brave / MetaMask)</button>
+    <button id="btn_phantom"  disabled>connect Phantom</button>
+    <button id="btn_stop"     disabled>stop</button>
+    <button id="btn_start"    disabled style="display:none;">resume</button>
+    <span style="color:#888;font-size:.85rem;">workgroups
+      <input id="in_wg" type="number" min="64" max="65535" step="64" value="8192"
+             style="width:6em;background:#111;color:#fff;border:1px solid #444;padding:.2rem;font-family:inherit;">
+    </span>
+    <span style="color:#888;font-size:.85rem;">pipeline
+      <input id="in_pipe" type="number" min="1" max="16" step="1" value="4"
+             style="width:4em;background:#111;color:#fff;border:1px solid #444;padding:.2rem;font-family:inherit;">
+    </span>
+  </div>
 </div>
 
 <div id="banner">
@@ -313,10 +326,13 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
 // ── App state ──────────────────────────────────────────────────────────
 let consent = false;
-let provider, signer, walletAddr, contract;
-let device, pipeline, bindGroup, uniformBuf, resultBuf, readBuf;
-let WORKGROUPS = 4096;          // 4096 wg × 64 thr × 16 it = 4_194_304 hashes / dispatch
+let provider, signer, walletAddr, contract, eipProvider;
+let device, pipeline, uniformBuf;
+let resultBufs = [], readBufs = [], bindGroups = [];
+let PIPELINE = 4;               // # of dispatches kept in flight on the GPU
+let WORKGROUPS = 8192;          // 8192 wg × 64 thr × 16 it = 8_388_608 hashes / dispatch
 let stopFlag = false;
+let mining = false;
 let totalHashes = 0n;
 let solutionsFound = 0;
 let hrSamples = [];             // {t, h}
@@ -353,47 +369,69 @@ async function initGPU() {
   uniformBuf = device.createBuffer({
     size: 96, usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
   });
-  resultBuf = device.createBuffer({
-    size: 64, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST
-  });
-  readBuf = device.createBuffer({
-    size: 64, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST
-  });
+  rebuildPipelineBuffers();
+}
 
-  bindGroup = device.createBindGroup({
-    layout: pipeline.getBindGroupLayout(0),
-    entries: [
-      { binding: 0, resource: { buffer: uniformBuf } },
-      { binding: 1, resource: { buffer: resultBuf } },
-    ],
-  });
+function rebuildPipelineBuffers() {
+  // Free old (best-effort)
+  for (const b of resultBufs) try { b.destroy(); } catch {}
+  for (const b of readBufs)   try { b.destroy(); } catch {}
+  resultBufs = []; readBufs = []; bindGroups = [];
+  for (let i = 0; i < PIPELINE; i++) {
+    const rb = device.createBuffer({
+      size: 64, usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_SRC | GPUBufferUsage.COPY_DST
+    });
+    const mb = device.createBuffer({
+      size: 64, usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST
+    });
+    resultBufs.push(rb);
+    readBufs.push(mb);
+    bindGroups.push(device.createBindGroup({
+      layout: pipeline.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: uniformBuf } },
+        { binding: 1, resource: { buffer: rb } },
+      ],
+    }));
+  }
 }
 
 // ── Wallet / contract ──────────────────────────────────────────────────
-async function connectWallet() {
-  if (!window.ethereum) throw new Error("MetaMask (ou autre wallet EIP-1193) requis.");
-  provider = new ethers.BrowserProvider(window.ethereum);
+function pickProvider(kind) {
+  if (kind === "phantom") {
+    const p = window.phantom?.ethereum;
+    if (!p) throw new Error("Phantom (mode Ethereum activé) non détecté. Activez Ethereum dans Phantom > Settings.");
+    return p;
+  }
+  // Default: MetaMask, Brave wallet, etc. (EIP-1193 on window.ethereum)
+  if (!window.ethereum) throw new Error("Aucun wallet EIP-1193 (window.ethereum) détecté.");
+  return window.ethereum;
+}
+
+async function connectWallet(kind) {
+  eipProvider = pickProvider(kind);
+  provider = new ethers.BrowserProvider(eipProvider);
   await provider.send("eth_requestAccounts", []);
   const net = await provider.getNetwork();
   if (net.chainId !== CHAIN_ID) {
     try {
-      await window.ethereum.request({
+      await eipProvider.request({
         method: "wallet_switchEthereumChain",
         params: [{ chainId: "0x1" }],
       });
-      provider = new ethers.BrowserProvider(window.ethereum);
+      provider = new ethers.BrowserProvider(eipProvider);
     } catch (e) { throw new Error("Veuillez basculer sur Ethereum mainnet."); }
   }
   signer = await provider.getSigner();
   walletAddr = (await signer.getAddress()).toLowerCase();
-  $("s_wallet").textContent = walletAddr;
+  $("s_wallet").textContent = walletAddr + "  (" + (kind === "phantom" ? "Phantom" : "default") + ")";
   if (walletAddr !== PAYOUT_TARGET) {
     setStatus("Wallet connecté ≠ adresse de payout cible. Les tokens iront au wallet connecté.", "warn");
   }
   contract = new ethers.Contract(CONTRACT, ABI, signer);
 
-  window.ethereum.on?.("accountsChanged", () => location.reload());
-  window.ethereum.on?.("chainChanged",   () => location.reload());
+  eipProvider.on?.("accountsChanged", () => location.reload());
+  eipProvider.on?.("chainChanged",   () => location.reload());
 }
 
 // ── On-chain reads ─────────────────────────────────────────────────────
@@ -441,85 +479,109 @@ function writeUniform(nonceBase) {
   device.queue.writeBuffer(uniformBuf, 0, u32);
 }
 
-async function dispatchOne(nonceBase) {
-  // Reset result buffer (found = 0)
-  device.queue.writeBuffer(resultBuf, 0, new Uint32Array(16));
+function enqueueSlot(slot, nonceBase) {
+  // Each slot has its own result buffer + bind group. The single uniform
+  // buffer is written before the corresponding dispatch so the GPU sees
+  // them in order on the queue.
+  device.queue.writeBuffer(resultBufs[slot], 0, new Uint32Array(16));  // reset found=0
   writeUniform(nonceBase);
 
   const enc = device.createCommandEncoder();
   const pass = enc.beginComputePass();
   pass.setPipeline(pipeline);
-  pass.setBindGroup(0, bindGroup);
+  pass.setBindGroup(0, bindGroups[slot]);
   pass.dispatchWorkgroups(WORKGROUPS);
   pass.end();
-  enc.copyBufferToBuffer(resultBuf, 0, readBuf, 0, 64);
+  enc.copyBufferToBuffer(resultBufs[slot], 0, readBufs[slot], 0, 64);
   device.queue.submit([enc.finish()]);
+}
 
-  await readBuf.mapAsync(GPUMapMode.READ);
-  const r = new Uint32Array(readBuf.getMappedRange().slice(0));
-  readBuf.unmap();
-
+async function readSlot(slot) {
+  await readBufs[slot].mapAsync(GPUMapMode.READ);
+  const r = new Uint32Array(readBufs[slot].getMappedRange().slice(0));
+  readBufs[slot].unmap();
   return {
-    found: r[0] > 0,
-    nonceLo: r[1] >>> 0,
-    nonceHi: r[2] >>> 0,
-    hash: r.slice(4, 12),
+    found:    r[0] > 0,
+    nonceLo:  r[1] >>> 0,
+    nonceHi:  r[2] >>> 0,
+    hash:     r.slice(4, 12),
   };
 }
 
+async function submitMine(nonce) {
+  setStatus("Solution trouvée — soumission de mine() …", "");
+  try {
+    const gas = await contract.mine.estimateGas(nonce).catch(() => 200000n);
+    const fee = await provider.getFeeData();
+    const tx = await contract.mine(nonce, {
+      gasLimit: (gas * 12n) / 10n,
+      maxFeePerGas: fee.maxFeePerGas ?? undefined,
+      maxPriorityFeePerGas: fee.maxPriorityFeePerGas ?? undefined,
+    });
+    $("s_tx").textContent = tx.hash;
+    setStatus("tx envoyée: " + shortHex(tx.hash) + " — attente confirmation…");
+    const rcpt = await tx.wait();
+    setStatus(rcpt.status === 1
+      ? "✓ mint confirmé — re-fetch challenge"
+      : "✗ tx reverted — re-fetch challenge", rcpt.status === 1 ? "" : "warn");
+  } catch (e) {
+    console.error(e);
+    setStatus("Erreur mine(): " + (e.shortMessage || e.message || e), "err");
+  }
+  try { await refreshChainState(); } catch (e) { console.warn(e); }
+}
+
 async function mineLoop() {
-  // Random 64-bit nonce base to avoid collisions across miners
+  if (mining) return;
+  mining = true;
+  stopFlag = false;
+
+  // Random 64-bit nonce base to avoid colliding with other miners on this wallet
   const seed = crypto.getRandomValues(new Uint32Array(2));
   nonceCursor = (BigInt(seed[1]) << 32n) | BigInt(seed[0]);
-  const STEP = BigInt(WORKGROUPS) * 64n * 16n;
+  const HASHES_PER_DISPATCH = () => BigInt(WORKGROUPS) * 64n * 16n;
 
+  // Prime the pipeline: queue PIPELINE dispatches first
+  for (let s = 0; s < PIPELINE; s++) {
+    enqueueSlot(s, nonceCursor);
+    nonceCursor = (nonceCursor + HASHES_PER_DISPATCH()) & ((1n << 64n) - 1n);
+  }
+
+  let slot = 0;
   let lastEpochCheck = performance.now();
 
   while (!stopFlag) {
+    // Read the oldest dispatch (slot index = slot)
+    const stepDone = HASHES_PER_DISPATCH(); // size of the dispatch we are reading
     const t0 = performance.now();
-    const res = await dispatchOne(nonceCursor);
-    nonceCursor = (nonceCursor + STEP) & ((1n << 64n) - 1n);
-    totalHashes += STEP;
-
+    const res = await readSlot(slot);
     const t1 = performance.now();
-    hrSamples.push({ t: t1, h: Number(STEP) });
-    while (hrSamples.length > 0 && t1 - hrSamples[0].t > 5000) hrSamples.shift();
-    const window = hrSamples.reduce((s,x)=>s+x.h, 0);
-    const dt = (t1 - hrSamples[0].t) / 1000 || (t1 - t0) / 1000;
-    const hr = window / Math.max(0.001, dt);
 
+    totalHashes += stepDone;
+    hrSamples.push({ t: t1, h: Number(stepDone) });
+    while (hrSamples.length > 0 && t1 - hrSamples[0].t > 5000) hrSamples.shift();
+    const sumH = hrSamples.reduce((s,x)=>s+x.h, 0);
+    const dt = (t1 - hrSamples[0].t) / 1000 || (t1 - t0) / 1000;
+    const hr = sumH / Math.max(0.001, dt);
     $("s_hr").textContent    = fmtHashes(hr) + "/s";
     $("s_total").textContent = totalHashes.toLocaleString("en-US");
+
+    // Re-queue this slot with the next chunk of nonces — keeps GPU busy
+    if (!stopFlag) {
+      enqueueSlot(slot, nonceCursor);
+      nonceCursor = (nonceCursor + HASHES_PER_DISPATCH()) & ((1n << 64n) - 1n);
+    }
+    slot = (slot + 1) % PIPELINE;
 
     if (res.found) {
       solutionsFound++;
       $("s_found").textContent = String(solutionsFound);
       const nonce = (BigInt(res.nonceHi) << 32n) | BigInt(res.nonceLo);
-      setStatus("Solution trouvée — soumission de mine() …", "");
-      try {
-        // Estimate gas, then submit
-        const gas = await contract.mine.estimateGas(nonce).catch(() => 200000n);
-        const fee = await provider.getFeeData();
-        const tx = await contract.mine(nonce, {
-          gasLimit: (gas * 12n) / 10n,
-          maxFeePerGas: fee.maxFeePerGas ?? undefined,
-          maxPriorityFeePerGas: fee.maxPriorityFeePerGas ?? undefined,
-        });
-        $("s_tx").textContent = tx.hash;
-        setStatus("tx envoyée: " + shortHex(tx.hash) + " — attente confirmation…");
-        const rcpt = await tx.wait();
-        setStatus(rcpt.status === 1
-          ? "✓ mint confirmé — re-fetch challenge"
-          : "✗ tx reverted — re-fetch challenge", rcpt.status === 1 ? "" : "warn");
-      } catch (e) {
-        console.error(e);
-        setStatus("Erreur mine(): " + (e.shortMessage || e.message || e), "err");
-      }
-      // Always refresh after a found solution (challenge rotates after a mint within the epoch)
-      try { await refreshChainState(); } catch (e) { console.warn(e); }
+      // Run the tx submission in parallel with mining — don't block the GPU loop
+      submitMine(nonce);
     }
 
-    // Periodic epoch / difficulty refresh (every ~30s)
+    // Periodic epoch refresh
     if (t1 - lastEpochCheck > 30000) {
       lastEpochCheck = t1;
       try {
@@ -529,31 +591,84 @@ async function mineLoop() {
       } catch (e) { console.warn(e); }
     }
   }
+
+  // Drain any remaining in-flight dispatches before exiting
+  for (let i = 0; i < PIPELINE; i++) {
+    try { await readSlot(slot); } catch {}
+    slot = (slot + 1) % PIPELINE;
+  }
+  mining = false;
+  setStatus("⏹ stoppé.");
 }
 
 // ── Bootstrap ──────────────────────────────────────────────────────────
-$("btn_consent").onclick = () => {
-  consent = true;
-  document.getElementById("banner").style.display = "none";
-  $("btn_connect").disabled = false;
-  setStatus("Cliquez sur \"connect wallet\" pour démarrer.");
-};
+function readKnobs() {
+  const wg = parseInt($("in_wg").value, 10);
+  const pp = parseInt($("in_pipe").value, 10);
+  if (Number.isFinite(wg) && wg >= 64 && wg <= 65535) WORKGROUPS = wg;
+  if (Number.isFinite(pp) && pp >= 1  && pp <= 16)    PIPELINE  = pp;
+}
 
-$("btn_connect").onclick = async () => {
+async function startSession(kind) {
   $("btn_connect").disabled = true;
+  $("btn_phantom").disabled = true;
   try {
+    readKnobs();
     setStatus("Connexion wallet…");
-    await connectWallet();
+    await connectWallet(kind);
     setStatus("Init GPU…");
     await initGPU();
     setStatus("Lecture état contrat…");
     await refreshChainState();
-    setStatus("Mining démarré (GPU plein régime).");
+    setStatus("Mining démarré · " + WORKGROUPS + " wg × " + PIPELINE + " in-flight.");
+    $("btn_stop").disabled = false;
+    $("btn_start").style.display = "none";
     mineLoop();
   } catch (e) {
     setStatus(e.message || String(e), "err");
     $("btn_connect").disabled = false;
+    $("btn_phantom").disabled = false;
   }
+}
+
+$("btn_consent").onclick = () => {
+  consent = true;
+  document.getElementById("banner").style.display = "none";
+  $("btn_connect").disabled = false;
+  $("btn_phantom").disabled = false;
+  setStatus("Choisissez un wallet pour démarrer.");
+};
+
+$("btn_connect").onclick = () => startSession("default");
+$("btn_phantom").onclick = () => startSession("phantom");
+
+$("btn_stop").onclick = () => {
+  stopFlag = true;
+  $("btn_stop").disabled = true;
+  $("btn_start").style.display = "";
+  $("btn_start").disabled = false;
+  setStatus("⏹ arrêt en cours… (drain pipeline)");
+};
+
+$("btn_start").onclick = async () => {
+  if (mining || !device || !contract) return;
+  readKnobs();
+  // If knobs changed, rebuild the pipeline buffer ring
+  if (resultBufs.length !== PIPELINE) rebuildPipelineBuffers();
+  $("btn_start").disabled = true;
+  $("btn_stop").disabled = false;
+  $("btn_start").style.display = "none";
+  setStatus("Mining repris · " + WORKGROUPS + " wg × " + PIPELINE + " in-flight.");
+  mineLoop();
+};
+
+// Live re-apply WORKGROUPS while mining (PIPELINE rebuild requires stop/resume)
+$("in_wg").onchange = () => {
+  readKnobs();
+  if (mining) setStatus("workgroups → " + WORKGROUPS + " (appliqué au prochain dispatch)");
+};
+$("in_pipe").onchange = () => {
+  setStatus("pipeline → " + $("in_pipe").value + " (stop/resume pour appliquer)");
 };
 
 window.addEventListener("beforeunload", () => { stopFlag = true; });
