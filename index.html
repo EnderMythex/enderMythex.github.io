@@ -56,30 +56,36 @@
         });
 
         // 4. La logique de Minage
+        // 4. La logique de Minage (Version Simulation Débloquée)
         async function startMiningProcess() {
-            document.getElementById('miningStatus').innerText = "Lecture de la blockchain...";
+            document.getElementById('miningStatus').innerText = "Lecture de la blockchain (Simulation)...";
             
-            // Étape A : Demander au contrat le problème mathématique actuel
-            const challenge = await contract.getChallengeNumber();
-            const difficulty = await contract.getMiningDifficulty();
+            // Étape A : On simule la réponse du Smart Contract pour éviter le plantage
+            // Au lieu de : await contract.getChallengeNumber();
+            const challenge = "0x000000000000000000000000000000000000000000000000000000000000abcd";
+            const difficulty = 65536; 
             
-            document.getElementById('miningStatus').innerText = "GPU au travail...";
+            document.getElementById('miningStatus').innerText = "Puzzle reçu ! GPU au travail (5 secondes)...";
 
-            // Étape B : On envoie le challenge au GPU via WebGPU (Simulation ici)
+            // Étape B : On envoie le challenge au GPU
             const discoveredNonce = await runWebGPUMiner(challenge, difficulty, userAddress);
 
             if (discoveredNonce) {
-                document.getElementById('miningStatus').innerText = "Solution trouvée ! Envoi à la blockchain...";
+                document.getElementById('miningStatus').innerText = "Solution trouvée ! Ouvre MetaMask pour valider...";
                 
-                // Étape C : RÉCLAMER L'ARGENT
-                // C'est ici que ton wallet (ton adresse) signe la transaction et paie le gaz
+                // Étape C : RÉCLAMER L'ARGENT (C'est ici que MetaMask va réagir)
                 try {
-                    const tx = await contract.mint(discoveredNonce, challenge);
-                    document.getElementById('miningStatus').innerText = `Transaction en cours... Hash: ${tx.hash}`;
-                    await tx.wait(); // On attend que la blockchain valide
-                    document.getElementById('miningStatus').innerText = "Succès ! Les jetons sont sur ton adresse.";
+                    // Attention : cette ligne va essayer de faire une vraie transaction si tu as mis une vraie adresse de contrat.
+                    // Pour éviter de dépenser du vrai gaz pendant l'apprentissage, on simule aussi l'envoi :
+                    console.log(`Prêt à envoyer le nonce ${discoveredNonce} au contrat !`);
+                    
+                    // Si tu avais un VRAI contrat de testnet, tu décommenterais la ligne en dessous :
+                    // const tx = await contract.mint(discoveredNonce, challenge);
+                    
+                    document.getElementById('miningStatus').innerText = `Simulation de transaction réussie ! Les jetons virtuels sont envoyés.`;
                 } catch (err) {
-                    console.error("Erreur de transaction (ou gaz trop faible)", err);
+                    console.error("Erreur de transaction", err);
+                    document.getElementById('miningStatus').innerText = "Erreur : " + err.message;
                 }
             }
         }
