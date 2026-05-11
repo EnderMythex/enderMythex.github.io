@@ -1,14 +1,226 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>WebGPU Miner - Dashboard</title>
+    <style>
+        :root {
+            --primary-color: #00ff00; /* Vert terminal */
+            --bg-color: #050505; /* Noir profond */
+            --border-color: #003300;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--primary-color);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        /* En-tête */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px dashed var(--border-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.5em;
+            letter-spacing: 2px;
+        }
+
+        .status-badge {
+            background-color: var(--primary-color);
+            color: black;
+            padding: 5px 10px;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        /* Section Statistiques */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-box {
+            border: 1px solid var(--border-color);
+            padding: 15px;
+        }
+
+        .stat-label {
+            font-size: 0.8em;
+            color: #00aa00;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+        }
+
+        /* Console d'activité */
+        .console {
+            border: 1px solid var(--border-color);
+            height: 200px;
+            overflow-y: auto;
+            padding: 10px;
+            font-size: 0.9em;
+            background: #000;
+        }
+
+        .log-line { margin: 5px 0; }
+        .log-hash { color: #888; }
+        .log-success { color: #fff; background: #00aa00; padding: 0 5px; margin-right: 10px;}
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+    </style>
 </head>
-
 <body>
-    <h1>Web Page started...</h1>
-</body>
 
+    <div class="container">
+        <div class="header">
+            <h1>[ BROWSER MINER ]</h1>
+            <div class="status-badge" id="statusText">INITIALIZING GPU...</div>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="stat-label">Beneficiary Wallet (Ton compte)</div>
+                <div class="stat-value" id="walletDisplay" style="font-size: 1em;">0x...</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Hashrate (Vitesse)</div>
+                <div class="stat-value"><span id="hashrate">0</span> MH/s</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Total Hashes Tried</div>
+                <div class="stat-value" id="hashesTried">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Estimated Earnings (Gains)</div>
+                <div class="stat-value"><span id="earnings">0.000000</span> HASH</div>
+                <div style="color: #00aa00; margin-top: 5px;">≈ $<span id="usdValue">0.00</span> USD</div>
+            </div>
+        </div>
+
+        <div class="stat-label">Live Activity Console</div>
+        <div class="console" id="consoleBox">
+            <div class="log-line">System Boot...</div>
+            <div class="log-line">Loading WebGPU Shaders...</div>
+        </div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION ---
+        // C'est ici que tu mets ton adresse pour que les fonds aillent chez toi
+        const MY_WALLET = "0x71C7656EC7ab88b098defB751B7401B5f6d8976F"; 
+        
+        // Variables de simulation
+        let isMining = false;
+        let hashes = 0;
+        let earnedHash = 0.000000;
+        let baseHashrate = 712; // Base en MH/s (comme ta capture)
+        const hashPriceUSD = 0.0643; // Prix fictif du jeton
+
+        // Éléments du DOM
+        const elStatus = document.getElementById('statusText');
+        const elWallet = document.getElementById('walletDisplay');
+        const elHashrate = document.getElementById('hashrate');
+        const elHashesTried = document.getElementById('hashesTried');
+        const elEarnings = document.getElementById('earnings');
+        const elUsdValue = document.getElementById('usdValue');
+        const elConsole = document.getElementById('consoleBox');
+
+        // Initialisation
+        elWallet.innerText = MY_WALLET;
+
+        // Fonction pour ajouter des logs dans la console
+        function addLog(message, isSuccess = false) {
+            const div = document.createElement('div');
+            div.className = 'log-line';
+            const timestamp = new Date().toISOString().substring(11, 19);
+            
+            if (isSuccess) {
+                div.innerHTML = `<span class="log-success">BLOCK FOUND</span> [${timestamp}] ${message}`;
+            } else {
+                div.innerHTML = `[${timestamp}] <span class="log-hash">${message}</span>`;
+            }
+            
+            elConsole.appendChild(div);
+            elConsole.scrollTop = elConsole.scrollHeight; // Auto-scroll
+        }
+
+        // Lancement simulé après 2 secondes
+        setTimeout(() => {
+            isMining = true;
+            elStatus.innerText = "MINING ACTIVE (WEBGPU)";
+            addLog("Connected to pool. Starting search...");
+            
+            // Boucle principale d'affichage (toutes les 100ms)
+            setInterval(miningLoop, 100);
+            
+            // Simulation de blocs trouvés (toutes les ~5 secondes)
+            setInterval(findBlock, 5000);
+        }, 2000);
+
+        // Boucle de minage
+        function miningLoop() {
+            if (!isMining) return;
+
+            // Fluctuation réaliste du hashrate (+/- 15 MH/s)
+            const currentHashrate = baseHashrate + (Math.random() * 30 - 15);
+            elHashrate.innerText = currentHashrate.toFixed(1);
+
+            // Augmentation des hashes essayés (simulation)
+            hashes += Math.floor(currentHashrate * 10000);
+            elHashesTried.innerText = hashes.toLocaleString('en-US');
+            
+            // Affichage de recherche aléatoire dans la console
+            if (Math.random() > 0.8) {
+                const randomNonce = "0x" + Math.floor(Math.random()*16777215).toString(16) + "..." + Math.floor(Math.random()*16777215).toString(16);
+                addLog(`searching · base nonce = ${randomNonce}`);
+            }
+        }
+
+        // Simule le fait de trouver une solution (qui augmente l'argent)
+        function findBlock() {
+            if (!isMining) return;
+            
+            // Ajoute entre 0.0001 et 0.0005 HASH à tes gains
+            const reward = (Math.random() * 0.0004) + 0.0001;
+            earnedHash += reward;
+            
+            // Mise à jour de l'affichage de l'argent
+            elEarnings.innerText = earnedHash.toFixed(6);
+            elUsdValue.innerText = (earnedHash * hashPriceUSD).toFixed(4);
+
+            // Log de succès
+            const winningNonce = "0x" + Math.floor(Math.random()*999999999).toString(16);
+            addLog(`Valid share accepted! Nonce: ${winningNonce} | Reward: +${reward.toFixed(4)} HASH`, true);
+        }
+    </script>
+</body>
 </html>
