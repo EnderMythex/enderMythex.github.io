@@ -375,7 +375,7 @@ function suffixMatchLen(addr) {
 }
 
 function run() {
-  const REPORT_EVERY = 2000;
+  const REPORT_EVERY = 300;
   let local = 0;
   let triesSinceSample = 0;
   let last = performance.now();
@@ -461,7 +461,7 @@ function fmt(n) {
 function updateUI() {
   $("s_tries").textContent = triesAcc.toLocaleString("en-US");
   const now = performance.now();
-  while (rateSamples.length > 0 && now - rateSamples[0].t > 5000) rateSamples.shift();
+  while (rateSamples.length > 0 && now - rateSamples[0].t > 10000) rateSamples.shift();
   const sum = rateSamples.reduce((s,x)=>s+x.h, 0);
   const dt  = (now - (rateSamples[0]?.t ?? now)) / 1000;
   lastRate  = dt > 0 ? sum / dt : 0;
