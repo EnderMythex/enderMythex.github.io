@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8" />
 <title>HASH miner — WebGPU</title>
@@ -69,12 +69,12 @@
     </span>
     <button id="btn_connect"  disabled>connect (default / Brave / MetaMask)</button>
     <button id="btn_phantom"  disabled>connect Phantom</button>
-    <button id="btn_test"     disabled title="benchmark sans wallet, sans envoi de tx">TEST (benchmark)</button>
+    <button id="btn_test"     disabled title="benchmark without a wallet, no tx is ever sent">TEST (benchmark)</button>
     <button id="btn_stop"     disabled>stop</button>
     <button id="btn_start"    disabled style="display:none;">resume</button>
     <span style="color:#888;font-size:.85rem;">test bits
       <input id="in_bits" type="number" min="8" max="40" step="1" value="20"
-             title="zéros initiaux requis dans le hash en mode test (plus haut = trouve moins souvent)"
+             title="leading zero bits required in the hash (higher = rarer hits)"
              style="width:4em;background:#111;color:#fff;border:1px solid #444;padding:.2rem;font-family:inherit;">
     </span>
     <span style="color:#888;font-size:.85rem;">workgroups
@@ -95,12 +95,12 @@
 
 <div id="banner">
   <span class="text">
-    Cette page utilise votre <b>GPU à pleine puissance</b> pour miner le token HASH (contrat
-    <code>0xAC7b…A0cc</code> sur Ethereum). Les tokens minés sont envoyés à l'adresse
-    Ethereum connectée via votre wallet. Chaque solution trouvée déclenche une transaction
-    qui coûte du gas en ETH. Refusez si vous ne souhaitez pas.
+    This page uses your <b>GPU at full power</b> to mine the HASH token (contract
+    <code>0xAC7b…A0cc</code> on Ethereum). Mined tokens go to the Ethereum address
+    of the wallet you connect. Each found solution triggers a transaction that
+    costs gas in ETH. Decline if you do not want this.
   </span>
-  <button id="btn_consent">J'accepte</button>
+  <button id="btn_consent">I agree</button>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
@@ -377,7 +377,7 @@ let nonceCursor = 0n;
 let testMode = false;           // true = no wallet, no tx, synthetic challenge
 let testBits = 20;              // # of leading zero bits required in test mode
 let mode = "gpu";               // "gpu" | "cpu" | "both"
-let gpuName = "(non détecté)";
+let gpuName = "(not detected)";
 let cpuCores = navigator.hardwareConcurrency || 4;
 let cpuThreadsWanted = 0;       // 0 = auto
 let cpuWorkers = [];
@@ -445,9 +445,9 @@ async function detectGPU() {
       }
     } catch {}
   }
-  gpuName = wgl || wgpu || "(non détecté)";
+  gpuName = wgl || wgpu || "(not detected)";
   $("s_gpu").textContent = gpuName + (wgl && wgpu ? "  ·  " + wgpu : "");
-  $("s_cpu").textContent = cpuCores + " threads logiques";
+  $("s_cpu").textContent = cpuCores + " logical threads";
   return gpuName;
 }
 
@@ -470,11 +470,11 @@ function autoTuneFromGPU() {
 
 // ── WebGPU setup ───────────────────────────────────────────────────────
 async function initGPU() {
-  if (!navigator.gpu) throw new Error("WebGPU non disponible (utilisez Chrome/Edge récent).");
+  if (!navigator.gpu) throw new Error("WebGPU not available (use a recent Chrome/Edge).");
   const adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
-  if (!adapter) throw new Error("Pas d'adaptateur GPU.");
+  if (!adapter) throw new Error("No GPU adapter.");
   device = await adapter.requestDevice();
-  device.lost.then(info => { setStatus("Device GPU perdu: " + info.message, "err"); stopFlag = true; });
+  device.lost.then(info => { setStatus("GPU device lost: " + info.message, "err"); stopFlag = true; });
 
   const module = device.createShaderModule({ code: SHADER });
   pipeline = await device.createComputePipelineAsync({
@@ -516,11 +516,11 @@ function rebuildPipelineBuffers() {
 function pickProvider(kind) {
   if (kind === "phantom") {
     const p = window.phantom?.ethereum;
-    if (!p) throw new Error("Phantom (mode Ethereum activé) non détecté. Activez Ethereum dans Phantom > Settings.");
+    if (!p) throw new Error("Phantom (Ethereum mode) not detected. Enable Ethereum in Phantom > Settings.");
     return p;
   }
   // Default: MetaMask, Brave wallet, etc. (EIP-1193 on window.ethereum)
-  if (!window.ethereum) throw new Error("Aucun wallet EIP-1193 (window.ethereum) détecté.");
+  if (!window.ethereum) throw new Error("No EIP-1193 wallet (window.ethereum) detected.");
   return window.ethereum;
 }
 
@@ -536,13 +536,13 @@ async function connectWallet(kind) {
         params: [{ chainId: "0x1" }],
       });
       provider = new ethers.BrowserProvider(eipProvider);
-    } catch (e) { throw new Error("Veuillez basculer sur Ethereum mainnet."); }
+    } catch (e) { throw new Error("Please switch to Ethereum mainnet."); }
   }
   signer = await provider.getSigner();
   walletAddr = (await signer.getAddress()).toLowerCase();
   $("s_wallet").textContent = walletAddr + "  (" + (kind === "phantom" ? "Phantom" : "default") + ")";
   if (walletAddr !== PAYOUT_TARGET) {
-    setStatus("Wallet connecté ≠ adresse de payout cible. Les tokens iront au wallet connecté.", "warn");
+    setStatus("Connected wallet ≠ target payout address. Tokens will go to the connected wallet.", "warn");
   }
   contract = new ethers.Contract(CONTRACT, ABI, signer);
 
@@ -583,7 +583,7 @@ function setupSyntheticState() {
   $("s_chal").textContent  = shortHex(chalHex);
   $("s_diff").textContent  = bits + " bits (1 hit ~ every 2^" + bits + " hashes)";
   $("s_epoch").textContent = "test";
-  $("s_bal").textContent   = "— (test mode, pas de tx)";
+  $("s_bal").textContent   = "— (test mode, no tx)";
 }
 
 // ── Mining loop ────────────────────────────────────────────────────────
@@ -643,7 +643,7 @@ async function readSlot(slot) {
 }
 
 async function submitMine(nonce) {
-  setStatus("Solution trouvée — soumission de mine() …", "");
+  setStatus("Solution found — submitting mine() …", "");
   try {
     const gas = await contract.mine.estimateGas(nonce).catch(() => 200000n);
     const fee = await provider.getFeeData();
@@ -653,14 +653,14 @@ async function submitMine(nonce) {
       maxPriorityFeePerGas: fee.maxPriorityFeePerGas ?? undefined,
     });
     $("s_tx").textContent = tx.hash;
-    setStatus("tx envoyée: " + shortHex(tx.hash) + " — attente confirmation…");
+    setStatus("tx sent: " + shortHex(tx.hash) + " — awaiting confirmation…");
     const rcpt = await tx.wait();
     setStatus(rcpt.status === 1
-      ? "✓ mint confirmé — re-fetch challenge"
-      : "✗ tx reverted — re-fetch challenge", rcpt.status === 1 ? "" : "warn");
+      ? "✓ mint confirmed — re-fetching challenge"
+      : "✗ tx reverted — re-fetching challenge", rcpt.status === 1 ? "" : "warn");
   } catch (e) {
     console.error(e);
-    setStatus("Erreur mine(): " + (e.shortMessage || e.message || e), "err");
+    setStatus("mine() error: " + (e.shortMessage || e.message || e), "err");
   }
   try { await refreshChainState(); } catch (e) { console.warn(e); }
 }
@@ -854,7 +854,7 @@ async function mineLoop() {
     slot = (slot + 1) % PIPELINE;
   }
   mining = false;
-  setStatus("⏹ stoppé.");
+  setStatus("⏹ stopped.");
 }
 
 // ── Bootstrap ──────────────────────────────────────────────────────────
@@ -929,11 +929,11 @@ async function startTestMode() {
   try {
     readKnobs();
     testMode = true;
-    walletAddr = "(test mode — pas de wallet)";
+    walletAddr = "(test mode — no wallet)";
     contract = null;
     $("s_wallet").textContent = walletAddr;
     setupSyntheticState();
-    setStatus("TEST · " + describeEngines() + " · " + testBits + " bits target. Aucune tx envoyée.");
+    setStatus("TEST · " + describeEngines() + " · " + testBits + " bits target. No tx will be sent.");
     $("btn_stop").disabled = false;
     $("btn_start").style.display = "none";
     await startEngines();
@@ -952,15 +952,15 @@ async function startSession(kind) {
   try {
     readKnobs();
     testMode = false;
-    setStatus("Connexion wallet…");
+    setStatus("Connecting wallet…");
     await connectWallet(kind);
-    setStatus("Lecture état contrat…");
+    setStatus("Reading contract state…");
     if (!device && (mode === "gpu" || mode === "both")) {
-      setStatus("Init GPU…");
+      setStatus("Initializing GPU…");
       await initGPU();
     }
     await refreshChainState();
-    setStatus("Mining démarré · " + describeEngines());
+    setStatus("Mining started · " + describeEngines());
     $("btn_stop").disabled = false;
     $("btn_start").style.display = "none";
     await startEngines();
@@ -978,7 +978,7 @@ $("btn_consent").onclick = () => {
   $("btn_connect").disabled = false;
   $("btn_phantom").disabled = false;
   $("btn_test").disabled    = false;
-  setStatus("Choisissez un wallet — ou TEST pour benchmark sans wallet.");
+  setStatus("Pick a wallet — or TEST for a benchmark without a wallet.");
 };
 
 $("btn_connect").onclick = () => startSession("default");
@@ -990,7 +990,7 @@ $("btn_stop").onclick = () => {
   $("btn_stop").disabled = true;
   $("btn_start").style.display = "";
   $("btn_start").disabled = false;
-  setStatus("⏹ arrêt en cours… (drain pipeline)");
+  setStatus("⏹ stopping… (draining pipeline)");
 };
 
 $("btn_start").onclick = async () => {
@@ -1001,23 +1001,23 @@ $("btn_start").onclick = async () => {
   $("btn_start").disabled = true;
   $("btn_stop").disabled = false;
   $("btn_start").style.display = "none";
-  setStatus("Mining repris · " + describeEngines());
+  setStatus("Mining resumed · " + describeEngines());
   await startEngines();
 };
 
 // Live re-apply WORKGROUPS while mining (PIPELINE rebuild requires stop/resume)
 $("in_wg").onchange = () => {
   readKnobs();
-  if (mining) setStatus("workgroups → " + WORKGROUPS + " (appliqué au prochain dispatch)");
+  if (mining) setStatus("workgroups → " + WORKGROUPS + " (applied on next dispatch)");
 };
 $("in_pipe").onchange = () => {
-  setStatus("pipeline → " + $("in_pipe").value + " (stop/resume pour appliquer)");
+  setStatus("pipeline → " + $("in_pipe").value + " (stop/resume to apply)");
 };
 $("in_bits").onchange = () => {
   readKnobs();
   if (testMode) {
     setupSyntheticState();
-    setStatus("test bits → " + testBits + " (appliqué au prochain dispatch)");
+    setStatus("test bits → " + testBits + " (applied on next dispatch)");
   }
 };
 
@@ -1025,14 +1025,14 @@ window.addEventListener("beforeunload", () => { stopFlag = true; stopCpuWorkers(
 
 // ── Boot ───────────────────────────────────────────────────────────────
 (async function boot() {
-  $("s_cpu").textContent = (navigator.hardwareConcurrency || "?") + " threads logiques";
+  $("s_cpu").textContent = (navigator.hardwareConcurrency || "?") + " logical threads";
   await detectGPU();
   const tune = autoTuneFromGPU();
   $("in_wg").value   = tune.wg;
   $("in_pipe").value = tune.pp;
   WORKGROUPS = tune.wg;
   PIPELINE   = tune.pp;
-  setStatus("GPU détecté → auto-tune " + tune.wg + " wg × " + tune.pp + " in-flight. Cliquez \"J'accepte\".");
+  setStatus("GPU detected → auto-tuned " + tune.wg + " wg × " + tune.pp + " in-flight. Click \"I agree\".");
 })();
 </script>
 </body>
