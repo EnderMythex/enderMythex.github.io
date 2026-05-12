@@ -31,22 +31,33 @@
   <div id="title">HASH BROWSER MINER · WEBGPU</div>
   <div id="stats">
     <div class="row"><span class="k">status</span><span class="v" id="s_status">init…</span></div>
+    <div class="row"><span class="k">gpu</span><span class="v" id="s_gpu">—</span></div>
+    <div class="row"><span class="k">cpu cores</span><span class="v" id="s_cpu">—</span></div>
     <div class="row"><span class="k">wallet</span><span class="v" id="s_wallet">—</span></div>
     <div class="row"><span class="k">payout target</span><span class="v" id="s_target">0xB5Da12E6Ce8DBdA0c8390DB46958F61181C6E381</span></div>
     <div class="row"><span class="k">balance</span><span class="v" id="s_bal">—</span></div>
+    <div class="row"><span class="k">hashrate gpu</span><span class="v" id="s_hr_gpu">—</span></div>
+    <div class="row"><span class="k">hashrate cpu</span><span class="v" id="s_hr_cpu">—</span></div>
     <div class="row"><span class="k">epoch</span><span class="v" id="s_epoch">—</span></div>
     <div class="row"><span class="k">difficulty</span><span class="v" id="s_diff">—</span></div>
     <div class="row"><span class="k">challenge</span><span class="v" id="s_chal">—</span></div>
-    <div class="row"><span class="k">hashrate</span><span class="v" id="s_hr">—</span></div>
+    <div class="row"><span class="k">hashrate total</span><span class="v" id="s_hr">—</span></div>
     <div class="row"><span class="k">hashes tried</span><span class="v" id="s_total">0</span></div>
     <div class="row"><span class="k">solutions found</span><span class="v" id="s_found">0</span></div>
     <div class="row"><span class="k">last tx</span><span class="v" id="s_tx">—</span></div>
   </div>
   <div id="status"></div>
   <div id="actions" style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;align-items:center;">
+    <span style="color:#888;font-size:.85rem;">mode
+      <select id="sel_mode" style="background:#111;color:#fff;border:1px solid #444;padding:.2rem;font-family:inherit;">
+        <option value="gpu" selected>GPU only</option>
+        <option value="cpu">CPU only</option>
+        <option value="both">GPU + CPU</option>
+      </select>
+    </span>
     <button id="btn_connect"  disabled>connect (default / Brave / MetaMask)</button>
     <button id="btn_phantom"  disabled>connect Phantom</button>
-    <button id="btn_test"     disabled title="benchmark GPU sans wallet, sans envoi de tx">TEST (benchmark)</button>
+    <button id="btn_test"     disabled title="benchmark sans wallet, sans envoi de tx">TEST (benchmark)</button>
     <button id="btn_stop"     disabled>stop</button>
     <button id="btn_start"    disabled style="display:none;">resume</button>
     <span style="color:#888;font-size:.85rem;">test bits
@@ -60,6 +71,11 @@
     </span>
     <span style="color:#888;font-size:.85rem;">pipeline
       <input id="in_pipe" type="number" min="1" max="16" step="1" value="4"
+             style="width:4em;background:#111;color:#fff;border:1px solid #444;padding:.2rem;font-family:inherit;">
+    </span>
+    <span style="color:#888;font-size:.85rem;">cpu threads
+      <input id="in_threads" type="number" min="1" max="64" step="1" value="0"
+             title="0 = auto (navigator.hardwareConcurrency)"
              style="width:4em;background:#111;color:#fff;border:1px solid #444;padding:.2rem;font-family:inherit;">
     </span>
   </div>
@@ -348,6 +364,16 @@ let currentEpoch = 0n;
 let nonceCursor = 0n;
 let testMode = false;           // true = no wallet, no tx, synthetic challenge
 let testBits = 20;              // # of leading zero bits required in test mode
+let mode = "gpu";               // "gpu" | "cpu" | "both"
+let gpuName = "(non détecté)";
+let cpuCores = navigator.hardwareConcurrency || 4;
+let cpuThreadsWanted = 0;       // 0 = auto
+let cpuWorkers = [];
+let cpuRunning = false;
+let cpuHashesAcc = 0n;          // total hashes accumulated by CPU since start of session
+let gpuHashesAcc = 0n;
+let hrSamplesGpu = [];          // {t, h}
+let hrSamplesCpu = [];          // {t, h}
 
 // ── UI helpers ─────────────────────────────────────────────────────────
 function fmtHashes(n) {
@@ -358,6 +384,76 @@ function fmtHashes(n) {
 }
 function shortHex(h, head=10, tail=8) {
   return h.length > head + tail + 2 ? h.slice(0, head) + "…" + h.slice(-tail) : h;
+}
+function hrFromSamples(samples) {
+  if (samples.length === 0) return 0;
+  const now = performance.now();
+  const dt = (now - samples[0].t) / 1000;
+  if (dt <= 0.001) return 0;
+  const sum = samples.reduce((s,x)=>s+x.h, 0);
+  return sum / dt;
+}
+function updateHashrateUI() {
+  const hg = hrFromSamples(hrSamplesGpu);
+  const hc = hrFromSamples(hrSamplesCpu);
+  $("s_hr_gpu").textContent = (mode === "cpu") ? "—" : fmtHashes(hg) + "/s";
+  $("s_hr_cpu").textContent = (mode === "gpu") ? "—" : fmtHashes(hc) + "/s · " + cpuWorkers.length + " threads";
+  $("s_hr").textContent     = fmtHashes(hg + hc) + "/s";
+  $("s_total").textContent  = totalHashes.toLocaleString("en-US");
+}
+
+// ── GPU detection + auto-tune ──────────────────────────────────────────
+function webglRendererName() {
+  try {
+    const c = document.createElement("canvas");
+    const gl = c.getContext("webgl2") || c.getContext("webgl");
+    if (!gl) return null;
+    const ext = gl.getExtension("WEBGL_debug_renderer_info");
+    if (!ext) return gl.getParameter(gl.RENDERER) || null;
+    return gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || null;
+  } catch { return null; }
+}
+
+async function detectGPU() {
+  // 1) WebGL UNMASKED_RENDERER usually wins (gives real GPU model name)
+  const wgl = webglRendererName();
+  // 2) WebGPU adapter info as fallback
+  let wgpu = null;
+  if (navigator.gpu) {
+    try {
+      const adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
+      if (adapter) {
+        if (adapter.info) {
+          const i = adapter.info;
+          wgpu = [i.vendor, i.architecture, i.device, i.description].filter(Boolean).join(" / ");
+        } else if (adapter.requestAdapterInfo) {
+          const i = await adapter.requestAdapterInfo();
+          wgpu = [i.vendor, i.architecture, i.device, i.description].filter(Boolean).join(" / ");
+        }
+      }
+    } catch {}
+  }
+  gpuName = wgl || wgpu || "(non détecté)";
+  $("s_gpu").textContent = gpuName + (wgl && wgpu ? "  ·  " + wgpu : "");
+  $("s_cpu").textContent = cpuCores + " threads logiques";
+  return gpuName;
+}
+
+function autoTuneFromGPU() {
+  const n = (gpuName || "").toLowerCase();
+  // Returns {workgroups, pipeline} for `in_wg` / `in_pipe` defaults
+  const HIGH = { wg: 32768, pp: 6 };
+  const MID  = { wg: 16384, pp: 4 };
+  const LOW  = { wg:  4096, pp: 2 };
+  const MIN  = { wg:  1024, pp: 2 };
+  let pick;
+  if (/(rtx\s?[345]0|rtx\s?20[678]0|rx\s?[67]\d{3}|rx\s?6800|rx\s?6900|rx\s?7900|m[234]\s?(max|ultra)|a100|h100|l40)/i.test(n)) pick = HIGH;
+  else if (/(rtx\s?20[567]0|gtx\s?16|gtx\s?10[678]0|rx\s?5\d{3}|rx\s?580|rx\s?vega|m[12](\spro)?|m[34]\s?pro|arc\s?a[78])/i.test(n)) pick = MID;
+  else if (/(intel.*(uhd|hd|iris|xe)|amd\s?radeon\s?vega|adreno|mali|apple\s?gpu|apple\s?a\d|powervr)/i.test(n)) pick = LOW;
+  else pick = MID; // unknown → mid
+  // Also clamp to mobile-ish defaults if device pixel ratio suggests mobile
+  if (matchMedia("(pointer: coarse)").matches) pick = pick === HIGH ? MID : (pick === MID ? LOW : MIN);
+  return pick;
 }
 
 // ── WebGPU setup ───────────────────────────────────────────────────────
@@ -459,6 +555,7 @@ async function refreshChainState() {
   $("s_diff").textContent  = "0x" + difficultyBytes.reduce((s,b)=>s+b.toString(16).padStart(2,"0"),"").replace(/^0+/,"") || "0";
   $("s_epoch").textContent = currentEpoch.toString();
   $("s_bal").textContent   = ethers.formatUnits(bal, 18) + " HASH";
+  if (cpuRunning) retargetCpuWorkers();
 }
 
 function setupSyntheticState() {
@@ -556,6 +653,127 @@ async function submitMine(nonce) {
   try { await refreshChainState(); } catch (e) { console.warn(e); }
 }
 
+// ── CPU mining via Web Workers (keccak256 in JS) ───────────────────────
+const CPU_WORKER_SRC = String.raw`
+self.importScripts("https://cdn.jsdelivr.net/npm/js-sha3@0.9.3/build/sha3.min.js");
+let stop = false;
+let myIdx = 0, total = 1;
+let challenge = null, target = null, nonce = 0n;
+
+function bytesLt(a, b) {
+  for (let i = 0; i < 32; i++) {
+    if (a[i] < b[i]) return true;
+    if (a[i] > b[i]) return false;
+  }
+  return false;
+}
+
+function run() {
+  const buf = new Uint8Array(64);
+  buf.set(challenge, 0);
+  const REPORT_EVERY = 20000;
+  const STEP = BigInt(total);
+  let localHashes = 0;
+  let lastReport = performance.now();
+  while (!stop) {
+    let n = nonce;
+    for (let i = 63; i >= 32; i--) { buf[i] = Number(n & 0xFFn); n >>= 8n; }
+    const hash = self.keccak_256.array(buf); // number[32]
+    if (bytesLt(hash, target)) {
+      self.postMessage({ type: "found", nonce: "0x" + nonce.toString(16) });
+      // continue searching after a hit (controller decides next step)
+    }
+    nonce += STEP;
+    localHashes++;
+    if (localHashes >= REPORT_EVERY) {
+      const now = performance.now();
+      self.postMessage({ type: "progress", hashes: localHashes, dt: now - lastReport });
+      localHashes = 0;
+      lastReport = now;
+    }
+  }
+}
+
+self.onmessage = (e) => {
+  const m = e.data;
+  if (m.type === "init") { myIdx = m.idx; total = m.total; }
+  else if (m.type === "retarget") {
+    challenge = new Uint8Array(m.challenge);
+    target = new Uint8Array(m.target);
+    nonce = BigInt(m.nonceStart) + BigInt(myIdx);
+  }
+  else if (m.type === "start") { stop = false; run(); }
+  else if (m.type === "stop") { stop = true; }
+};
+`;
+
+function effectiveThreadCount() {
+  if (cpuThreadsWanted > 0) return Math.min(cpuThreadsWanted, 64);
+  return Math.max(1, cpuCores - 1); // leave 1 core for UI
+}
+
+function startCpuWorkers() {
+  if (cpuRunning) return;
+  cpuRunning = true;
+  const N = effectiveThreadCount();
+  const blob = new Blob([CPU_WORKER_SRC], { type: "application/javascript" });
+  const url = URL.createObjectURL(blob);
+  const seed = crypto.getRandomValues(new Uint32Array(2));
+  const nonceStart = ((BigInt(seed[1]) << 32n) | BigInt(seed[0])).toString();
+  cpuWorkers = [];
+  for (let i = 0; i < N; i++) {
+    const w = new Worker(url);
+    w.postMessage({ type: "init", idx: i, total: N });
+    w.postMessage({
+      type: "retarget",
+      challenge: Array.from(challengeBytes),
+      target:    Array.from(difficultyBytes),
+      nonceStart,
+    });
+    w.onmessage = (e) => {
+      const m = e.data;
+      if (m.type === "progress") {
+        cpuHashesAcc += BigInt(m.hashes);
+        totalHashes  += BigInt(m.hashes);
+        const now = performance.now();
+        hrSamplesCpu.push({ t: now, h: m.hashes });
+        while (hrSamplesCpu.length > 0 && now - hrSamplesCpu[0].t > 5000) hrSamplesCpu.shift();
+      } else if (m.type === "found") {
+        solutionsFound++;
+        $("s_found").textContent = String(solutionsFound);
+        const nonce = BigInt(m.nonce);
+        if (testMode) {
+          $("s_tx").textContent = "test hit (cpu) · nonce=" + m.nonce;
+        } else {
+          submitMine(nonce);
+        }
+      }
+    };
+    w.postMessage({ type: "start" });
+    cpuWorkers.push(w);
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 1000); // workers already own their copy
+}
+
+function stopCpuWorkers() {
+  for (const w of cpuWorkers) { try { w.postMessage({ type: "stop" }); w.terminate(); } catch {} }
+  cpuWorkers = [];
+  cpuRunning = false;
+}
+
+function retargetCpuWorkers() {
+  const seed = crypto.getRandomValues(new Uint32Array(2));
+  const nonceStart = ((BigInt(seed[1]) << 32n) | BigInt(seed[0])).toString();
+  for (const w of cpuWorkers) {
+    w.postMessage({
+      type: "retarget",
+      challenge: Array.from(challengeBytes),
+      target:    Array.from(difficultyBytes),
+      nonceStart,
+    });
+  }
+}
+
 async function mineLoop() {
   if (mining) return;
   mining = true;
@@ -583,13 +801,10 @@ async function mineLoop() {
     const t1 = performance.now();
 
     totalHashes += stepDone;
-    hrSamples.push({ t: t1, h: Number(stepDone) });
-    while (hrSamples.length > 0 && t1 - hrSamples[0].t > 5000) hrSamples.shift();
-    const sumH = hrSamples.reduce((s,x)=>s+x.h, 0);
-    const dt = (t1 - hrSamples[0].t) / 1000 || (t1 - t0) / 1000;
-    const hr = sumH / Math.max(0.001, dt);
-    $("s_hr").textContent    = fmtHashes(hr) + "/s";
-    $("s_total").textContent = totalHashes.toLocaleString("en-US");
+    gpuHashesAcc += stepDone;
+    hrSamplesGpu.push({ t: t1, h: Number(stepDone) });
+    while (hrSamplesGpu.length > 0 && t1 - hrSamplesGpu[0].t > 5000) hrSamplesGpu.shift();
+    updateHashrateUI();
 
     // Re-queue this slot with the next chunk of nonces — keeps GPU busy
     if (!stopFlag) {
@@ -635,9 +850,64 @@ function readKnobs() {
   const wg = parseInt($("in_wg").value, 10);
   const pp = parseInt($("in_pipe").value, 10);
   const bb = parseInt($("in_bits").value, 10);
+  const tt = parseInt($("in_threads").value, 10);
   if (Number.isFinite(wg) && wg >= 64 && wg <= 65535) WORKGROUPS = wg;
   if (Number.isFinite(pp) && pp >= 1  && pp <= 16)    PIPELINE  = pp;
   if (Number.isFinite(bb) && bb >= 1  && bb <= 255)   testBits  = bb;
+  if (Number.isFinite(tt) && tt >= 0  && tt <= 64)    cpuThreadsWanted = tt;
+  mode = $("sel_mode").value;
+}
+
+let uiTick = null;
+let lastCpuChainCheck = 0;
+function startUiTick() {
+  if (uiTick) return;
+  uiTick = setInterval(async () => {
+    updateHashrateUI();
+    // Periodic on-chain refresh when GPU loop isn't running (CPU-only mode)
+    if (!testMode && contract && cpuRunning && !mining) {
+      const now = performance.now();
+      if (now - lastCpuChainCheck > 30000) {
+        lastCpuChainCheck = now;
+        try { await refreshChainState(); } catch (e) { console.warn(e); }
+      }
+    }
+  }, 500);
+}
+function stopUiTick() {
+  if (uiTick) { clearInterval(uiTick); uiTick = null; }
+}
+
+async function startEngines() {
+  // Launch GPU and/or CPU workers based on the selected mode.
+  if (mode === "gpu" || mode === "both") {
+    if (!device) {
+      setStatus("Init GPU…");
+      await initGPU();
+    }
+    mineLoop(); // GPU loop (async, non-blocking)
+  }
+  if (mode === "cpu" || mode === "both") {
+    if (!challengeBytes || !difficultyBytes) {
+      // In real (non-test) flow without GPU init, ensure we have on-chain state
+      if (!testMode) await refreshChainState();
+      else setupSyntheticState();
+    }
+    startCpuWorkers();
+  }
+  startUiTick();
+}
+
+function stopEngines() {
+  stopFlag = true;
+  stopCpuWorkers();
+  stopUiTick();
+}
+
+function describeEngines() {
+  if (mode === "gpu")  return "GPU · " + WORKGROUPS + " wg × " + PIPELINE + " in-flight";
+  if (mode === "cpu")  return "CPU · " + effectiveThreadCount() + " threads";
+  return "GPU + CPU · " + WORKGROUPS + " wg × " + PIPELINE + " · " + effectiveThreadCount() + " threads";
 }
 
 async function startTestMode() {
@@ -650,13 +920,11 @@ async function startTestMode() {
     walletAddr = "(test mode — pas de wallet)";
     contract = null;
     $("s_wallet").textContent = walletAddr;
-    setStatus("Init GPU…");
-    await initGPU();
     setupSyntheticState();
-    setStatus("TEST · " + WORKGROUPS + " wg × " + PIPELINE + " in-flight · " + testBits + " bits target. Aucune tx envoyée.");
+    setStatus("TEST · " + describeEngines() + " · " + testBits + " bits target. Aucune tx envoyée.");
     $("btn_stop").disabled = false;
     $("btn_start").style.display = "none";
-    mineLoop();
+    await startEngines();
   } catch (e) {
     setStatus(e.message || String(e), "err");
     $("btn_connect").disabled = false;
@@ -668,22 +936,27 @@ async function startTestMode() {
 async function startSession(kind) {
   $("btn_connect").disabled = true;
   $("btn_phantom").disabled = true;
+  $("btn_test").disabled = true;
   try {
     readKnobs();
+    testMode = false;
     setStatus("Connexion wallet…");
     await connectWallet(kind);
-    setStatus("Init GPU…");
-    await initGPU();
     setStatus("Lecture état contrat…");
+    if (!device && (mode === "gpu" || mode === "both")) {
+      setStatus("Init GPU…");
+      await initGPU();
+    }
     await refreshChainState();
-    setStatus("Mining démarré · " + WORKGROUPS + " wg × " + PIPELINE + " in-flight.");
+    setStatus("Mining démarré · " + describeEngines());
     $("btn_stop").disabled = false;
     $("btn_start").style.display = "none";
-    mineLoop();
+    await startEngines();
   } catch (e) {
     setStatus(e.message || String(e), "err");
     $("btn_connect").disabled = false;
     $("btn_phantom").disabled = false;
+    $("btn_test").disabled = false;
   }
 }
 
@@ -701,7 +974,7 @@ $("btn_phantom").onclick = () => startSession("phantom");
 $("btn_test").onclick    = () => startTestMode();
 
 $("btn_stop").onclick = () => {
-  stopFlag = true;
+  stopEngines();
   $("btn_stop").disabled = true;
   $("btn_start").style.display = "";
   $("btn_start").disabled = false;
@@ -709,15 +982,15 @@ $("btn_stop").onclick = () => {
 };
 
 $("btn_start").onclick = async () => {
-  if (mining || !device || !contract) return;
+  if (mining && cpuRunning) return;
   readKnobs();
-  // If knobs changed, rebuild the pipeline buffer ring
-  if (resultBufs.length !== PIPELINE) rebuildPipelineBuffers();
+  // If knobs changed, rebuild the pipeline buffer ring (GPU only)
+  if (device && resultBufs.length !== PIPELINE) rebuildPipelineBuffers();
   $("btn_start").disabled = true;
   $("btn_stop").disabled = false;
   $("btn_start").style.display = "none";
-  setStatus("Mining repris · " + WORKGROUPS + " wg × " + PIPELINE + " in-flight.");
-  mineLoop();
+  setStatus("Mining repris · " + describeEngines());
+  await startEngines();
 };
 
 // Live re-apply WORKGROUPS while mining (PIPELINE rebuild requires stop/resume)
@@ -736,7 +1009,19 @@ $("in_bits").onchange = () => {
   }
 };
 
-window.addEventListener("beforeunload", () => { stopFlag = true; });
+window.addEventListener("beforeunload", () => { stopFlag = true; stopCpuWorkers(); });
+
+// ── Boot ───────────────────────────────────────────────────────────────
+(async function boot() {
+  $("s_cpu").textContent = (navigator.hardwareConcurrency || "?") + " threads logiques";
+  await detectGPU();
+  const tune = autoTuneFromGPU();
+  $("in_wg").value   = tune.wg;
+  $("in_pipe").value = tune.pp;
+  WORKGROUPS = tune.wg;
+  PIPELINE   = tune.pp;
+  setStatus("GPU détecté → auto-tune " + tune.wg + " wg × " + tune.pp + " in-flight. Cliquez \"J'accepte\".");
+})();
 </script>
 </body>
 </html>
