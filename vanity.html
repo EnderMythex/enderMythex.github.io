@@ -65,6 +65,28 @@
   #results .meta { color:#666; font-size:.73rem; margin-top:.15rem; }
   .copy { background:#1a1a1a; color:#aaa; border:1px solid #333; padding:.12rem .35rem;
           font-family:inherit; font-size:.68rem; cursor:pointer; margin-left:.4rem; }
+  .qr-btn { background:#1a1a1a; color:#9cf; border:1px solid #336; padding:.12rem .35rem;
+            font-family:inherit; font-size:.68rem; cursor:pointer; margin-left:.3rem; }
+
+  /* QR modal */
+  #qr-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.85);
+                z-index:100; align-items:center; justify-content:center; padding:1rem; }
+  #qr-overlay.open { display:flex; }
+  #qr-box { border:1px solid #333; background:#0a0a0a; padding:1.4rem 1.6rem;
+            max-width:360px; width:100%; box-sizing:border-box; text-align:center; }
+  #qr-box .qr-label { color:#666; font-size:.68rem; letter-spacing:.18em;
+                      text-transform:uppercase; margin-bottom:.8rem; }
+  #qr-box .qr-addr  { color:#9f9; font-size:.78rem; word-break:break-all;
+                      margin-bottom:1rem; line-height:1.5; }
+  #qr-canvas-wrap   { display:flex; justify-content:center; margin-bottom:1rem; }
+  #qr-canvas-wrap canvas { border:6px solid #fff; display:block; }
+  #qr-box .qr-key-label { color:#666; font-size:.68rem; letter-spacing:.1em;
+                           text-transform:uppercase; margin-bottom:.35rem; }
+  #qr-key { color:#fc6; font-size:.72rem; word-break:break-all; line-height:1.5;
+             background:#111; border:1px solid #333; padding:.5rem .6rem;
+             margin-bottom:.8rem; text-align:left; user-select:all; cursor:text; }
+  #qr-box .qr-btns { display:flex; gap:.5rem; justify-content:center; flex-wrap:wrap; }
+  #qr-box .qr-btns button { flex:1; min-width:7em; }
 </style>
 </head>
 <body>
@@ -161,7 +183,24 @@
 
 </div>
 
+<!-- QR modal -->
+<div id="qr-overlay">
+  <div id="qr-box">
+    <div class="qr-label">Match found — save your key</div>
+    <div class="qr-addr" id="qr-addr"></div>
+    <div id="qr-canvas-wrap"><canvas id="qr-canvas"></canvas></div>
+    <div class="qr-key-label">Private key (base58) — paste into Phantom → Import Private Key</div>
+    <div id="qr-key"></div>
+    <div class="qr-btns">
+      <button id="qr-copy">copy key</button>
+      <button id="qr-dl">download .json</button>
+      <button id="qr-close">close</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <script>
 "use strict";
 
@@ -472,12 +511,12 @@ function escapeHtml(s) {
 }
 
 function appendResult({ address, secretKey, secretBytes }) {
+  showQrModal(address, secretKey, secretBytes);
   const div = document.createElement("div");
   div.className = "item";
   div.innerHTML =
     '<div class="addr">' + address + ' <button class="copy" data-copy="' + address + '">copy</button></div>' +
-    '<div class="priv">private (base58, 64B): ' + secretKey + ' <button class="copy" data-copy="' + secretKey + '">copy</button></div>' +
-    '<div class="priv">private (json bytes): [' + secretBytes.join(',') + '] <button class="copy" data-copy="[' + secretBytes.join(',') + ']">copy</button></div>' +
+    '<div class="priv">private key (base58): ' + secretKey + ' <button class="copy" data-copy="' + secretKey + '">copy</button> <button class="qr-btn" data-addr="' + address + '" data-key="' + secretKey + '" data-bytes=\'' + JSON.stringify(secretBytes) + '\'>QR</button></div>' +
     '<div class="meta">found after ' + triesAcc.toLocaleString("en-US") + ' tries</div>';
   const results = $("results");
   results.insertBefore(div, results.firstChild);
@@ -491,6 +530,9 @@ document.addEventListener("click", (e) => {
       t.textContent = "copied";
       setTimeout(() => t.textContent = old, 1200);
     });
+  }
+  if (t.classList && t.classList.contains("qr-btn")) {
+    showQrModal(t.dataset.addr, t.dataset.key, JSON.parse(t.dataset.bytes));
   }
 });
 
@@ -590,6 +632,45 @@ setInterval(updateUI, 300);
   refreshValidation();
   setStatus("Ready. Set a prefix/suffix then ▶ start.");
 })();
+
+// ── QR modal ───────────────────────────────────────────────────────────
+let _qrCurrentKey = "";
+let _qrCurrentBytes = [];
+
+function showQrModal(address, secretKey, secretBytes) {
+  _qrCurrentKey   = secretKey;
+  _qrCurrentBytes = secretBytes;
+  $("qr-addr").textContent = address;
+  $("qr-key").textContent  = secretKey;
+  const canvas = $("qr-canvas");
+  QRCode.toCanvas(canvas, secretKey, {
+    width: 220,
+    color: { dark: "#000000", light: "#ffffff" },
+    errorCorrectionLevel: "M",
+  }, err => { if (err) console.error(err); });
+  $("qr-overlay").classList.add("open");
+}
+
+$("qr-close").onclick = () => $("qr-overlay").classList.remove("open");
+$("qr-overlay").addEventListener("click", e => {
+  if (e.target === $("qr-overlay")) $("qr-overlay").classList.remove("open");
+});
+$("qr-copy").onclick = () => {
+  navigator.clipboard.writeText(_qrCurrentKey).then(() => {
+    const btn = $("qr-copy");
+    const old = btn.textContent;
+    btn.textContent = "copied!";
+    setTimeout(() => btn.textContent = old, 1400);
+  });
+};
+$("qr-dl").onclick = () => {
+  const blob = new Blob([JSON.stringify(_qrCurrentBytes)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "keypair.json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+};
 
 window.addEventListener("beforeunload", stopGen);
 </script>
