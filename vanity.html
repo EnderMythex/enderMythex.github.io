@@ -8,141 +8,157 @@
   html, body { margin:0; padding:0; min-height:100%; background:#000; color:#fff;
                font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
   #nav { position:fixed; top:0; left:0; right:0; background:#0a0a0a; border-bottom:1px solid #222;
-         padding:.5rem 1rem; display:flex; gap:1.5rem; align-items:center; font-size:.85rem; z-index:10; }
+         padding:.5rem 1rem; display:flex; gap:1.5rem; align-items:center; font-size:.85rem; z-index:10;
+         flex-wrap:wrap; }
   #nav .brand { color:#888; font-weight:600; letter-spacing:.18em; margin-right:1rem; }
   #nav a { color:#aaa; text-decoration:none; padding:.2rem .4rem; border-bottom:2px solid transparent; }
   #nav a:hover { color:#fff; }
   #nav a.active { color:#fff; border-bottom-color:#fff; }
 
-  #wrap { padding:4rem 2rem 2rem; display:flex; flex-direction:column; align-items:center;
-          gap:.6rem; box-sizing:border-box; text-align:center; }
-  #title { font-weight:600; letter-spacing:.18em; font-size:.9rem; color:#aaa; margin-bottom:.6rem; }
+  #wrap { padding:4rem 1.5rem 2rem; max-width:860px; margin:0 auto; box-sizing:border-box; }
 
-  #stats { font-size: clamp(13px, 1.6vw, 18px); line-height:1.7; }
-  #stats .row { display:grid; grid-template-columns: 14em 1fr; gap:1rem; text-align:left; }
+  .panel { border:1px solid #222; padding:1rem 1.2rem; margin-bottom:1rem; }
+  .panel-title { color:#666; font-size:.7rem; letter-spacing:.2em; text-transform:uppercase;
+                 margin-bottom:.8rem; border-bottom:1px solid #1a1a1a; padding-bottom:.4rem; }
+
+  #stats { font-size:clamp(12px,1.5vw,14px); line-height:1.8; }
+  #stats .row { display:grid; grid-template-columns:12em 1fr; column-gap:1rem; }
   #stats .k { color:#888; }
   #stats .v { color:#fff; word-break:break-all; }
 
-  #status { color:#9f9; min-height:1.4em; }
+  #status { color:#9f9; min-height:1.4em; font-size:.85rem; margin-top:.6rem; }
   .warn { color:#fc6; }
   .err  { color:#f77; }
 
-  #actions { display:flex; gap:.5rem; flex-wrap:wrap; justify-content:center; align-items:center;
-             max-width:60em; }
-  #actions .ctl { color:#888; font-size:.85rem; display:inline-flex; gap:.3rem; align-items:center; }
-  button { background:#fff; color:#000; border:0; padding:.5rem 1rem;
-           font-family:inherit; cursor:pointer; font-size:.85rem; }
+  .controls { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
+  .ctl { color:#888; font-size:.82rem; display:inline-flex; gap:.3rem; align-items:center; }
+
+  button { background:#fff; color:#000; border:0; padding:.45rem .9rem;
+           font-family:inherit; cursor:pointer; font-size:.82rem; white-space:nowrap; }
   button:disabled { opacity:.4; cursor:not-allowed; }
   input[type=text], input[type=number], select {
-    background:#111; color:#fff; border:1px solid #444; padding:.2rem .4rem;
-    font-family:inherit; font-size:.85rem;
+    background:#111; color:#fff; border:1px solid #444; padding:.25rem .4rem;
+    font-family:inherit; font-size:.82rem;
   }
-  input[type=text] { min-width:10em; }
-  input[type=number] { min-width:4em; }
+  input[type=text] { min-width:9em; }
+  input[type=number] { width:5em; }
+  select { max-width:18em; }
   input.bad { border-color:#a44; }
 
-  .section-title { color:#888; font-size:.75rem; letter-spacing:.18em; text-transform:uppercase;
-                   margin-top:1.4rem; text-align:left; width:100%; max-width:60em; }
+  .hint { color:#666; font-size:.75rem; margin-top:.5rem; }
+  code { color:#9cf; }
 
-  #log { width:100%; max-width:60em; background:#080808; border:1px solid #1a1a1a;
-         padding:.5rem .7rem; height:14em; overflow-y:auto;
-         font-size:.74rem; line-height:1.45; text-align:left; box-sizing:border-box; }
-  #log .ts   { color:#444; margin-right:.6rem; }
+  #log { background:#080808; border:1px solid #1a1a1a; padding:.5rem .7rem;
+         height:13em; overflow-y:auto; font-size:.73rem; line-height:1.5;
+         box-sizing:border-box; margin-top:.6rem; }
+  #log .ts   { color:#444; margin-right:.5rem; }
   #log .adr  { color:#9ad; }
   #log .near { color:#fc6; }
   #log .hit  { color:#9f9; font-weight:600; }
-  #log .miss { color:#666; }
+  #log .miss { color:#555; }
 
-  #results { width:100%; max-width:60em; text-align:left; font-size:.85rem; }
+  #results { font-size:.83rem; }
   #results .item { border-top:1px solid #222; padding:.6rem 0; }
   #results .item:first-child { border-top:0; }
   #results .addr { color:#9f9; word-break:break-all; }
-  #results .priv { color:#fc6; word-break:break-all; font-size:.78rem; }
-  #results .meta { color:#666; font-size:.75rem; }
-  .copy { background:#222; color:#bbb; border:1px solid #333; padding:.15rem .4rem;
-          font-family:inherit; font-size:.7rem; cursor:pointer; margin-left:.5rem; }
-  .hint { color:#666; font-size:.75rem; max-width:60em; text-align:left; }
-  code { color:#9cf; }
+  #results .priv { color:#fc6; word-break:break-all; font-size:.76rem; margin-top:.2rem; }
+  #results .meta { color:#666; font-size:.73rem; margin-top:.15rem; }
+  .copy { background:#1a1a1a; color:#aaa; border:1px solid #333; padding:.12rem .35rem;
+          font-family:inherit; font-size:.68rem; cursor:pointer; margin-left:.4rem; }
 </style>
 </head>
 <body>
 <nav id="nav">
   <span class="brand">$HASH</span>
-  <a href="index.html">miner</a>
+  <a href="index.html">home</a>
+  <a href="miner.html">miner</a>
   <a href="vanity.html" class="active">vanity solana</a>
 </nav>
 
 <div id="wrap">
-  <div id="title">SOLANA VANITY ADDRESS · BROWSER GENERATOR</div>
 
-  <div id="stats">
-    <div class="row"><span class="k">status</span><span class="v" id="s_status">init…</span></div>
-    <div class="row"><span class="k">gpu</span><span class="v" id="s_gpu">—</span></div>
-    <div class="row"><span class="k">cpu cores</span><span class="v" id="s_cpu">—</span></div>
-    <div class="row"><span class="k">tries</span><span class="v" id="s_tries">0</span></div>
-    <div class="row"><span class="k">tries/sec</span><span class="v" id="s_rate">—</span></div>
-    <div class="row"><span class="k">expected tries</span><span class="v" id="s_expect">—</span></div>
-    <div class="row"><span class="k">expected time</span><span class="v" id="s_etime">—</span></div>
-    <div class="row"><span class="k">found</span><span class="v" id="s_found">0</span></div>
+  <!-- Stats panel -->
+  <div class="panel">
+    <div class="panel-title">Generator stats</div>
+    <div id="stats">
+      <div class="row"><span class="k">status</span><span class="v" id="s_status">init…</span></div>
+      <div class="row"><span class="k">gpu</span><span class="v" id="s_gpu">—</span></div>
+      <div class="row"><span class="k">cpu cores</span><span class="v" id="s_cpu">—</span></div>
+      <div class="row"><span class="k">tries</span><span class="v" id="s_tries">0</span></div>
+      <div class="row"><span class="k">tries/sec</span><span class="v" id="s_rate">—</span></div>
+      <div class="row"><span class="k">expected tries</span><span class="v" id="s_expect">—</span></div>
+      <div class="row"><span class="k">expected time</span><span class="v" id="s_etime">—</span></div>
+      <div class="row"><span class="k">found</span><span class="v" id="s_found">0</span></div>
+    </div>
+    <div id="status"></div>
   </div>
 
-  <div id="status"></div>
-
-  <div id="actions">
-    <span class="ctl">mode
-      <select id="sel_mode">
-        <option value="cpu" selected>CPU only (recommended)</option>
-        <option value="gpu" disabled>GPU only — unavailable (Ed25519 on GPU is a project of its own)</option>
-        <option value="both" disabled>GPU + CPU — same</option>
-      </select>
-    </span>
-    <span class="ctl">starts with
-      <input id="in_prefix" type="text" placeholder="e.g. SoL" autocomplete="off">
-    </span>
-    <span class="ctl">ends with
-      <input id="in_suffix" type="text" placeholder="e.g. PUMP" autocomplete="off">
-    </span>
-    <span class="ctl">case
-      <select id="sel_case">
-        <option value="exact" selected>exact</option>
-        <option value="ignore">ignore</option>
-        <option value="upper">force UPPER</option>
-        <option value="lower">force lower</option>
-      </select>
-    </span>
-    <span class="ctl">cpu threads
-      <input id="in_threads" type="number" min="0" max="64" step="1" value="0"
-             title="0 = auto (cores - 1)">
-    </span>
-    <span class="ctl">stop after
-      <input id="in_stopafter" type="number" min="1" max="9999" step="1" value="1"
-             title="stop after N matches">
-    </span>
-    <button id="btn_start">▶ start</button>
-    <button id="btn_stop" disabled>⏹ stop</button>
-    <button id="btn_clear">clear results</button>
+  <!-- Filters & controls panel -->
+  <div class="panel">
+    <div class="panel-title">Search filters</div>
+    <div class="controls">
+      <span class="ctl">mode
+        <select id="sel_mode">
+          <option value="cpu" selected>CPU only (recommended)</option>
+          <option value="gpu" disabled>GPU — unavailable (Ed25519 on GPU is a separate project)</option>
+        </select>
+      </span>
+      <span class="ctl">starts with
+        <input id="in_prefix" type="text" placeholder="e.g. SoL" autocomplete="off">
+      </span>
+      <span class="ctl">ends with
+        <input id="in_suffix" type="text" placeholder="e.g. PUMP" autocomplete="off">
+      </span>
+    </div>
+    <div class="controls" style="margin-top:.5rem;">
+      <span class="ctl">case
+        <select id="sel_case">
+          <option value="exact" selected>exact</option>
+          <option value="ignore">ignore case</option>
+          <option value="upper">force UPPER</option>
+          <option value="lower">force lower</option>
+        </select>
+      </span>
+      <span class="ctl">cpu threads
+        <input id="in_threads" type="number" min="0" max="64" step="1" value="0"
+               title="0 = auto (cores - 1)">
+      </span>
+      <span class="ctl">stop after
+        <input id="in_stopafter" type="number" min="1" max="9999" step="1" value="1">
+      </span>
+      <button id="btn_start">▶ start</button>
+      <button id="btn_stop" disabled>⏹ stop</button>
+      <button id="btn_clear">clear results</button>
+    </div>
+    <div class="hint">
+      Base58 alphabet: <code>123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz</code>
+      — no <code>0 O I l</code>. Addresses almost always start with a letter.
+    </div>
   </div>
 
-  <div class="hint">
-    Base58 alphabet (Solana): <code>123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz</code>
-    (no <code>0</code>, <code>O</code>, <code>I</code>, <code>l</code>).
-    An address almost always starts with a <b>letter</b>, so a purely numeric prefix is ~never matched.
+  <!-- Log panel -->
+  <div class="panel">
+    <div class="panel-title">Live search log</div>
+    <div class="controls">
+      <span class="ctl"><label><input type="checkbox" id="cb_log_near" checked> near-misses only</label></span>
+      <span class="ctl">sample 1 /
+        <input id="in_log_rate" type="number" min="1" max="100000" step="100" value="500">
+      </span>
+      <button id="btn_log_clear">clear log</button>
+    </div>
+    <div id="log"></div>
   </div>
 
-  <div class="section-title">live search log</div>
-  <div class="log-ctrls" style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;align-items:center;max-width:60em;">
-    <span class="ctl"><label><input type="checkbox" id="cb_log_near" checked> near-misses only</label></span>
-    <span class="ctl">sample 1/<input id="in_log_rate" type="number" min="1" max="100000" step="100" value="500" style="width:5em;"></span>
-    <button id="btn_log_clear">clear log</button>
+  <!-- Results panel -->
+  <div class="panel">
+    <div class="panel-title">Found addresses</div>
+    <div class="hint" style="margin-bottom:.5rem;">
+      ⚠ Private keys shown in plain text. Everything is generated <b>locally in your browser</b> —
+      nothing is sent over the network. Save the key immediately.
+    </div>
+    <div id="results"></div>
   </div>
-  <div id="log"></div>
 
-  <div class="section-title">found</div>
-  <div class="hint" style="margin-bottom:.4rem;">
-    ⚠ Private keys are shown in plain text below. Everything is generated <b>locally in your browser</b>,
-    nothing is sent over the network. Save the key immediately; only import it into a wallet you trust.
-  </div>
-  <div id="results"></div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl.min.js"></script>
@@ -150,13 +166,15 @@
 "use strict";
 
 const $ = id => document.getElementById(id);
-const setStatus = (msg, cls="") => { const el=$("s_status"); el.textContent=msg;
-                                     const wrap=$("status"); if(wrap){wrap.textContent="";wrap.className=cls;} };
+const setStatus = (msg, cls="") => {
+  const el=$("s_status"); el.textContent=msg;
+  const wrap=$("status"); if(wrap){ wrap.textContent=""; wrap.className=cls; }
+};
 
 const B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 const B58_SET = new Set(B58);
 
-// ── GPU + CPU detection (display only — vanity is CPU-only here) ───────
+// ── GPU + CPU detection ────────────────────────────────────────────────
 function webglRendererName() {
   try {
     const c = document.createElement("canvas");
@@ -244,7 +262,7 @@ function humanTime(sec) {
   return (sec/86400/365).toFixed(2) + " y";
 }
 
-// ── Worker source (inline blob) ────────────────────────────────────────
+// ── Worker source ──────────────────────────────────────────────────────
 const WORKER_SRC = String.raw`
 self.importScripts("https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl.min.js");
 
@@ -286,9 +304,7 @@ let nearMissOnly = true;
 function matches(addr) {
   let p = prefix, s = suffix, a = addr;
   if (caseMode === "ignore" || caseMode === "upper" || caseMode === "lower") {
-    a = addr.toLowerCase();
-    p = prefix.toLowerCase();
-    s = suffix.toLowerCase();
+    a = addr.toLowerCase(); p = prefix.toLowerCase(); s = suffix.toLowerCase();
   }
   if (p && !a.startsWith(p)) return false;
   if (s && !a.endsWith(s))   return false;
@@ -450,6 +466,7 @@ function appendLog(s) {
   log.insertBefore(line, log.firstChild);
   while (log.childNodes.length > LOG_MAX) log.removeChild(log.lastChild);
 }
+
 function escapeHtml(s) {
   return s.replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
 }
@@ -576,5 +593,17 @@ setInterval(updateUI, 300);
 
 window.addEventListener("beforeunload", stopGen);
 </script>
+
+<style>
+@media (max-width:620px) {
+  #wrap { padding:3.5rem 1rem 1.5rem; }
+  #stats .row { grid-template-columns:1fr; }
+  #stats .k { color:#666; font-size:.76rem; margin-top:.3rem; }
+  .controls { flex-direction:column; align-items:stretch; }
+  .controls .ctl { justify-content:space-between; }
+  .controls button { width:100%; }
+  select, input[type=text], input[type=number] { flex:1; min-width:0; width:100%; box-sizing:border-box; }
+}
+</style>
 </body>
 </html>
