@@ -188,7 +188,7 @@
   <div id="qr-box">
     <div class="qr-label">Match found — save your key</div>
     <div class="qr-addr" id="qr-addr"></div>
-    <div id="qr-canvas-wrap"><canvas id="qr-canvas"></canvas></div>
+    <div id="qr-canvas-wrap"></div>
     <div class="qr-key-label">Private key (base58) — paste into Phantom → Import Private Key</div>
     <div id="qr-key"></div>
     <div class="qr-btns">
@@ -200,7 +200,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 "use strict";
 
@@ -572,7 +572,11 @@ function startGen() {
         foundAcc++;
         appendResult(m);
         if (foundAcc >= stopAfter) {
-          for (const w2 of workers) w2.postMessage({ type: "stop" });
+          for (const w2 of workers) { try { w2.terminate(); } catch {} }
+          workers = [];
+          running = false;
+          $("btn_start").disabled = false;
+          $("btn_stop").disabled = true;
           setStatus("✓ " + foundAcc + " match(es) found — stopped.");
         }
       }
@@ -642,12 +646,14 @@ function showQrModal(address, secretKey, secretBytes) {
   _qrCurrentBytes = secretBytes;
   $("qr-addr").textContent = address;
   $("qr-key").textContent  = secretKey;
-  const canvas = $("qr-canvas");
-  QRCode.toCanvas(canvas, secretKey, {
-    width: 220,
-    color: { dark: "#000000", light: "#ffffff" },
-    errorCorrectionLevel: "M",
-  }, err => { if (err) console.error(err); });
+  const wrap = $("qr-canvas-wrap");
+  wrap.innerHTML = "";
+  new QRCode(wrap, {
+    text: secretKey,
+    width: 220, height: 220,
+    colorDark: "#000000", colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.M,
+  });
   $("qr-overlay").classList.add("open");
 }
 
