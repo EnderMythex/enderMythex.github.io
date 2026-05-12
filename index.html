@@ -46,8 +46,14 @@
   <div id="actions" style="display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;align-items:center;">
     <button id="btn_connect"  disabled>connect (default / Brave / MetaMask)</button>
     <button id="btn_phantom"  disabled>connect Phantom</button>
+    <button id="btn_test"     disabled title="benchmark GPU sans wallet, sans envoi de tx">TEST (benchmark)</button>
     <button id="btn_stop"     disabled>stop</button>
     <button id="btn_start"    disabled style="display:none;">resume</button>
+    <span style="color:#888;font-size:.85rem;">test bits
+      <input id="in_bits" type="number" min="8" max="40" step="1" value="20"
+             title="zéros initiaux requis dans le hash en mode test (plus haut = trouve moins souvent)"
+             style="width:4em;background:#111;color:#fff;border:1px solid #444;padding:.2rem;font-family:inherit;">
+    </span>
     <span style="color:#888;font-size:.85rem;">workgroups
       <input id="in_wg" type="number" min="64" max="65535" step="64" value="8192"
              style="width:6em;background:#111;color:#fff;border:1px solid #444;padding:.2rem;font-family:inherit;">
@@ -340,6 +346,8 @@ let challengeBytes = null;      // Uint8Array(32)
 let difficultyBytes = null;     // Uint8Array(32) BE
 let currentEpoch = 0n;
 let nonceCursor = 0n;
+let testMode = false;           // true = no wallet, no tx, synthetic challenge
+let testBits = 20;              // # of leading zero bits required in test mode
 
 // ── UI helpers ─────────────────────────────────────────────────────────
 function fmtHashes(n) {
@@ -436,6 +444,7 @@ async function connectWallet(kind) {
 
 // ── On-chain reads ─────────────────────────────────────────────────────
 async function refreshChainState() {
+  if (testMode) return setupSyntheticState();
   const [chal, ms, bal] = await Promise.all([
     contract.getChallenge(walletAddr),
     contract.miningState(),
@@ -450,6 +459,22 @@ async function refreshChainState() {
   $("s_diff").textContent  = "0x" + difficultyBytes.reduce((s,b)=>s+b.toString(16).padStart(2,"0"),"").replace(/^0+/,"") || "0";
   $("s_epoch").textContent = currentEpoch.toString();
   $("s_bal").textContent   = ethers.formatUnits(bal, 18) + " HASH";
+}
+
+function setupSyntheticState() {
+  // Random per-session challenge so two test runs don't share nonces
+  challengeBytes = crypto.getRandomValues(new Uint8Array(32));
+  // target = 2^(256-bits) - 1 → hash < target requires `bits` leading zero bits
+  const bits = Math.max(1, Math.min(255, testBits));
+  const target = (1n << BigInt(256 - bits)) - 1n;
+  difficultyBytes = ethers.getBytes(ethers.toBeHex(target, 32));
+  currentEpoch = 0n;
+
+  const chalHex = "0x" + Array.from(challengeBytes, b => b.toString(16).padStart(2,"0")).join("");
+  $("s_chal").textContent  = shortHex(chalHex);
+  $("s_diff").textContent  = bits + " bits (1 hit ~ every 2^" + bits + " hashes)";
+  $("s_epoch").textContent = "test";
+  $("s_bal").textContent   = "— (test mode, pas de tx)";
 }
 
 // ── Mining loop ────────────────────────────────────────────────────────
@@ -577,12 +602,16 @@ async function mineLoop() {
       solutionsFound++;
       $("s_found").textContent = String(solutionsFound);
       const nonce = (BigInt(res.nonceHi) << 32n) | BigInt(res.nonceLo);
-      // Run the tx submission in parallel with mining — don't block the GPU loop
-      submitMine(nonce);
+      if (testMode) {
+        $("s_tx").textContent = "test hit · nonce=0x" + nonce.toString(16);
+      } else {
+        // Run the tx submission in parallel with mining — don't block the GPU loop
+        submitMine(nonce);
+      }
     }
 
-    // Periodic epoch refresh
-    if (t1 - lastEpochCheck > 30000) {
+    // Periodic epoch refresh — skipped in test mode (no chain calls)
+    if (!testMode && t1 - lastEpochCheck > 30000) {
       lastEpochCheck = t1;
       try {
         const prevEpoch = currentEpoch;
@@ -605,8 +634,35 @@ async function mineLoop() {
 function readKnobs() {
   const wg = parseInt($("in_wg").value, 10);
   const pp = parseInt($("in_pipe").value, 10);
+  const bb = parseInt($("in_bits").value, 10);
   if (Number.isFinite(wg) && wg >= 64 && wg <= 65535) WORKGROUPS = wg;
   if (Number.isFinite(pp) && pp >= 1  && pp <= 16)    PIPELINE  = pp;
+  if (Number.isFinite(bb) && bb >= 1  && bb <= 255)   testBits  = bb;
+}
+
+async function startTestMode() {
+  $("btn_connect").disabled = true;
+  $("btn_phantom").disabled = true;
+  $("btn_test").disabled = true;
+  try {
+    readKnobs();
+    testMode = true;
+    walletAddr = "(test mode — pas de wallet)";
+    contract = null;
+    $("s_wallet").textContent = walletAddr;
+    setStatus("Init GPU…");
+    await initGPU();
+    setupSyntheticState();
+    setStatus("TEST · " + WORKGROUPS + " wg × " + PIPELINE + " in-flight · " + testBits + " bits target. Aucune tx envoyée.");
+    $("btn_stop").disabled = false;
+    $("btn_start").style.display = "none";
+    mineLoop();
+  } catch (e) {
+    setStatus(e.message || String(e), "err");
+    $("btn_connect").disabled = false;
+    $("btn_phantom").disabled = false;
+    $("btn_test").disabled = false;
+  }
 }
 
 async function startSession(kind) {
@@ -636,11 +692,13 @@ $("btn_consent").onclick = () => {
   document.getElementById("banner").style.display = "none";
   $("btn_connect").disabled = false;
   $("btn_phantom").disabled = false;
-  setStatus("Choisissez un wallet pour démarrer.");
+  $("btn_test").disabled    = false;
+  setStatus("Choisissez un wallet — ou TEST pour benchmark sans wallet.");
 };
 
 $("btn_connect").onclick = () => startSession("default");
 $("btn_phantom").onclick = () => startSession("phantom");
+$("btn_test").onclick    = () => startTestMode();
 
 $("btn_stop").onclick = () => {
   stopFlag = true;
@@ -669,6 +727,13 @@ $("in_wg").onchange = () => {
 };
 $("in_pipe").onchange = () => {
   setStatus("pipeline → " + $("in_pipe").value + " (stop/resume pour appliquer)");
+};
+$("in_bits").onchange = () => {
+  readKnobs();
+  if (testMode) {
+    setupSyntheticState();
+    setStatus("test bits → " + testBits + " (appliqué au prochain dispatch)");
+  }
 };
 
 window.addEventListener("beforeunload", () => { stopFlag = true; });
