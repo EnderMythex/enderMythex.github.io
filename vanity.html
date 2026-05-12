@@ -38,6 +38,14 @@
   #results .addr { color:#9f9; word-break:break-all; }
   #results .priv { color:#fc6; word-break:break-all; font-size:.78rem; }
   #results .meta { color:#666; font-size:.75rem; }
+  #log { background:#080808; border:1px solid #1a1a1a; padding:.5rem .7rem; height:14em; overflow-y:auto;
+         font-size:.74rem; line-height:1.45; }
+  #log .ts   { color:#444; margin-right:.6rem; }
+  #log .adr  { color:#9ad; }
+  #log .near { color:#fc6; }
+  #log .hit  { color:#9f9; font-weight:600; }
+  #log .miss { color:#666; }
+  .log-ctrls { display:flex; gap:.6rem; align-items:center; margin-bottom:.4rem; color:#888; font-size:.78rem; }
   .copy { background:#222; color:#bbb; border:1px solid #333; padding:.15rem .4rem;
           font-family:inherit; font-size:.7rem; cursor:pointer; margin-left:.5rem; }
   code { color:#9cf; }
@@ -106,6 +114,17 @@
       <button id="btn_stop" disabled>⏹ stop</button>
       <button id="btn_clear">clear results</button>
     </div>
+  </div>
+
+  <div class="panel">
+    <div class="log-ctrls">
+      <span>live search log (échantillon des candidats testés + near-misses)</span>
+      <label><input type="checkbox" id="cb_log_near" checked> near-misses uniquement</label>
+      <label>échantillon 1/<input id="in_log_rate" type="number" min="1" max="100000" step="100" value="500"
+             style="width:5em;min-width:0;font-size:.7rem;padding:.1rem .3rem;"></label>
+      <button id="btn_log_clear" class="copy">clear log</button>
+    </div>
+    <div id="log"></div>
   </div>
 
   <div class="panel">
@@ -261,6 +280,8 @@ let stop = false;
 let prefix = "", suffix = "", caseMode = "exact";
 let stopAfter = 1, foundCount = 0;
 let myIdx = 0, total = 1;
+let sampleEvery = 500;       // post a sample to main every N tries
+let nearMissOnly = true;     // if true, only post when we have >=1 char of prefix matching
 
 function matches(addr) {
   let p = prefix, s = suffix, a = addr;
@@ -294,21 +315,70 @@ function matches(addr) {
   return true;
 }
 
+// Count how many leading chars of pref match the start of addr (case-aware).
+function prefixMatchLen(addr) {
+  if (!prefix) return 0;
+  let a = addr, p = prefix;
+  if (caseMode === "ignore" || caseMode === "upper" || caseMode === "lower") {
+    a = addr.toLowerCase(); p = prefix.toLowerCase();
+  }
+  let n = 0;
+  const lim = Math.min(a.length, p.length);
+  for (; n < lim; n++) if (a[n] !== p[n]) break;
+  return n;
+}
+function suffixMatchLen(addr) {
+  if (!suffix) return 0;
+  let a = addr, s = suffix;
+  if (caseMode === "ignore" || caseMode === "upper" || caseMode === "lower") {
+    a = addr.toLowerCase(); s = suffix.toLowerCase();
+  }
+  let n = 0;
+  const lim = Math.min(a.length, s.length);
+  for (; n < lim; n++) if (a[a.length-1-n] !== s[s.length-1-n]) break;
+  return n;
+}
+
 function run() {
   const REPORT_EVERY = 2000;
   let local = 0;
+  let triesSinceSample = 0;
   let last = performance.now();
+  // Track best near-miss seen since last sample so we always log something interesting
+  let bestPLen = -1, bestSLen = -1, bestAddr = "";
   while (!stop) {
     const kp = self.nacl.sign.keyPair();
     const addr = encodeB58(kp.publicKey);
+    const pLen = prefixMatchLen(addr);
+    const sLen = suffixMatchLen(addr);
+
+    // Track best near-miss in this window
+    if (pLen + sLen > bestPLen + bestSLen) { bestPLen = pLen; bestSLen = sLen; bestAddr = addr; }
+
     if (matches(addr)) {
-      // Solana wallets typically expect the 64-byte secretKey (seed||pub) base58-encoded
       const skB58 = encodeB58(kp.secretKey);
       self.postMessage({ type: "found", address: addr, secretKey: skB58, secretBytes: Array.from(kp.secretKey) });
       foundCount++;
       if (foundCount >= stopAfter) { stop = true; break; }
     }
+
     local++;
+    triesSinceSample++;
+    if (triesSinceSample >= sampleEvery) {
+      const interesting = (bestPLen > 0 || bestSLen > 0);
+      if (!nearMissOnly || interesting) {
+        self.postMessage({
+          type: "sample",
+          addr: bestAddr || addr,
+          pLen: bestPLen >= 0 ? bestPLen : 0,
+          sLen: bestSLen >= 0 ? bestSLen : 0,
+          pTotal: prefix.length,
+          sTotal: suffix.length,
+        });
+      }
+      triesSinceSample = 0;
+      bestPLen = -1; bestSLen = -1; bestAddr = "";
+    }
     if (local >= REPORT_EVERY) {
       const now = performance.now();
       self.postMessage({ type: "progress", tries: local, dt: now - last });
@@ -326,6 +396,8 @@ self.onmessage = (e) => {
   else if (m.type === "params") {
     prefix = m.prefix; suffix = m.suffix; caseMode = m.caseMode;
     stopAfter = m.stopAfter | 0; foundCount = 0;
+    sampleEvery = Math.max(1, m.sampleEvery | 0);
+    nearMissOnly = !!m.nearMissOnly;
   }
   else if (m.type === "start") { stop = false; run(); }
   else if (m.type === "stop")  { stop = true; }
@@ -365,6 +437,47 @@ function updateUI() {
   $("s_rate").textContent = lastRate ? fmt(lastRate) + " adr/s · " + workers.length + " threads" : "—";
   $("s_found").textContent = String(foundAcc);
   refreshValidation();
+}
+
+const LOG_MAX = 200;
+function appendLog(s) {
+  const log = $("log");
+  const t = new Date();
+  const hh = String(t.getHours()).padStart(2,"0");
+  const mm = String(t.getMinutes()).padStart(2,"0");
+  const ss = String(t.getSeconds()).padStart(2,"0");
+  const total = (s.pTotal || 0) + (s.sTotal || 0);
+  const matched = (s.pLen || 0) + (s.sLen || 0);
+  const isHit = total > 0 && matched === total;
+  const cls = isHit ? "hit" : (matched > 0 ? "near" : "miss");
+  let label = "";
+  if (s.pTotal) label += "prefix " + (s.pLen || 0) + "/" + s.pTotal;
+  if (s.sTotal) label += (label ? " · " : "") + "suffix " + (s.sLen || 0) + "/" + s.sTotal;
+  if (!label) label = "sample";
+
+  // Highlight matched chars
+  const addr = s.addr || "";
+  const pL = s.pLen || 0;
+  const sL = s.sLen || 0;
+  const head = addr.slice(0, pL);
+  const tail = sL > 0 ? addr.slice(-sL) : "";
+  const mid  = addr.slice(pL, addr.length - sL);
+  const addrHtml =
+    (pL ? '<span class="' + cls + '">' + escapeHtml(head) + '</span>' : "") +
+    '<span class="miss">' + escapeHtml(mid) + '</span>' +
+    (sL ? '<span class="' + cls + '">' + escapeHtml(tail) + '</span>' : "");
+
+  const line = document.createElement("div");
+  line.innerHTML =
+    '<span class="ts">' + hh + ':' + mm + ':' + ss + '</span>' +
+    '<span class="adr">' + addrHtml + '</span> ' +
+    '<span class="' + cls + '">[' + label + ']</span>';
+  log.insertBefore(line, log.firstChild);
+  // Trim
+  while (log.childNodes.length > LOG_MAX) log.removeChild(log.lastChild);
+}
+function escapeHtml(s) {
+  return s.replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;" }[c]));
 }
 
 function appendResult({ address, secretKey, secretBytes }) {
@@ -411,12 +524,18 @@ function startGen() {
   for (let i = 0; i < N; i++) {
     const w = new Worker(url);
     w.postMessage({ type: "init", idx: i, total: N });
-    w.postMessage({ type: "params", prefix, suffix, caseMode, stopAfter });
+    w.postMessage({
+      type: "params", prefix, suffix, caseMode, stopAfter,
+      sampleEvery: Math.max(1, parseInt($("in_log_rate").value, 10) || 500),
+      nearMissOnly: $("cb_log_near").checked,
+    });
     w.onmessage = (e) => {
       const m = e.data;
       if (m.type === "progress") {
         triesAcc += BigInt(m.tries);
         rateSamples.push({ t: performance.now(), h: m.tries });
+      } else if (m.type === "sample") {
+        appendLog(m);
       } else if (m.type === "found") {
         foundAcc++;
         appendResult(m);
@@ -454,6 +573,23 @@ function stopGen() {
 $("btn_start").onclick = startGen;
 $("btn_stop").onclick  = stopGen;
 $("btn_clear").onclick = () => { $("results").innerHTML = ""; foundAcc = 0; $("s_found").textContent = "0"; };
+$("btn_log_clear").onclick = () => { $("log").innerHTML = ""; };
+
+function broadcastLogPrefs() {
+  if (!running) return;
+  const params = {
+    type: "params",
+    prefix: $("in_prefix").value,
+    suffix: $("in_suffix").value,
+    caseMode: $("sel_case").value,
+    stopAfter,
+    sampleEvery: Math.max(1, parseInt($("in_log_rate").value, 10) || 500),
+    nearMissOnly: $("cb_log_near").checked,
+  };
+  for (const w of workers) w.postMessage(params);
+}
+$("in_log_rate").addEventListener("change", broadcastLogPrefs);
+$("cb_log_near").addEventListener("change", broadcastLogPrefs);
 
 ["in_prefix","in_suffix","sel_case"].forEach(id => {
   $(id).addEventListener("input",  refreshValidation);
