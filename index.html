@@ -24,9 +24,21 @@
             padding:.7rem 1rem; font-size:.8rem; display:flex; gap:1rem; align-items:center; justify-content:center;
             flex-wrap:wrap; }
   #banner .text { color:#bbb; max-width:60ch; }
+  #nav { position:fixed; top:0; left:0; right:0; background:#0a0a0a; border-bottom:1px solid #222;
+         padding:.5rem 1rem; display:flex; gap:1.5rem; align-items:center; font-size:.85rem; z-index:10; }
+  #nav .brand { color:#888; font-weight:600; letter-spacing:.18em; margin-right:1rem; }
+  #nav a { color:#aaa; text-decoration:none; padding:.2rem .4rem; border-bottom:2px solid transparent; }
+  #nav a:hover { color:#fff; }
+  #nav a.active { color:#fff; border-bottom-color:#fff; }
+  #wrap { padding-top:3rem; }
 </style>
 </head>
 <body>
+<nav id="nav">
+  <span class="brand">$HASH</span>
+  <a href="index.html"  class="active">miner</a>
+  <a href="vanity.html">vanity solana</a>
+</nav>
 <div id="wrap">
   <div id="title">HASH BROWSER MINER · WEBGPU</div>
   <div id="stats">

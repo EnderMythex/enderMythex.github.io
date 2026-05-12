@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Solana vanity address — CPU multi-thread</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  html, body { margin:0; padding:0; min-height:100%; background:#000; color:#fff;
+               font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  #nav { position:fixed; top:0; left:0; right:0; background:#0a0a0a; border-bottom:1px solid #222;
+         padding:.5rem 1rem; display:flex; gap:1.5rem; align-items:center; font-size:.85rem; z-index:10; }
+  #nav .brand { color:#888; font-weight:600; letter-spacing:.18em; margin-right:1rem; }
+  #nav a { color:#aaa; text-decoration:none; padding:.2rem .4rem; border-bottom:2px solid transparent; }
+  #nav a:hover { color:#fff; }
+  #nav a.active { color:#fff; border-bottom-color:#fff; }
+  #wrap { padding:3.5rem 2rem 2rem; max-width: 900px; margin:0 auto; }
+  h1 { font-weight:600; letter-spacing:.18em; font-size:.95rem; color:#aaa; margin:0 0 1.4rem 0; }
+  .panel { border:1px solid #222; padding:1rem 1.2rem; margin-bottom:1rem; }
+  .row { display:grid; grid-template-columns: 14em 1fr; gap:1rem; padding:.25rem 0; align-items:center; }
+  .row .k { color:#888; font-size:.85rem; }
+  .row .v { color:#fff; word-break:break-all; font-size:.9rem; }
+  input[type=text], input[type=number], select {
+    background:#111; color:#fff; border:1px solid #333; padding:.4rem .6rem;
+    font-family:inherit; font-size:.9rem; min-width:18em;
+  }
+  input.bad { border-color:#a44; }
+  button { background:#fff; color:#000; border:0; padding:.5rem 1rem;
+           font-family:inherit; cursor:pointer; font-size:.85rem; }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  .actions { display:flex; gap:.5rem; flex-wrap:wrap; align-items:center; }
+  #status { color:#9f9; min-height:1.4em; padding:.3rem 0; }
+  .warn { color:#fc6; }
+  .err  { color:#f77; }
+  .hint { color:#666; font-size:.75rem; margin-top:.3rem; }
+  #results { font-size:.85rem; }
+  #results .item { border-top:1px solid #222; padding:.6rem 0; }
+  #results .item:first-child { border-top:0; }
+  #results .addr { color:#9f9; word-break:break-all; }
+  #results .priv { color:#fc6; word-break:break-all; font-size:.78rem; }
+  #results .meta { color:#666; font-size:.75rem; }
+  .copy { background:#222; color:#bbb; border:1px solid #333; padding:.15rem .4rem;
+          font-family:inherit; font-size:.7rem; cursor:pointer; margin-left:.5rem; }
+  code { color:#9cf; }
+</style>
+</head>
+<body>
+<nav id="nav">
+  <span class="brand">$HASH</span>
+  <a href="index.html">miner</a>
+  <a href="vanity.html" class="active">vanity solana</a>
+</nav>
+<div id="wrap">
+  <h1>SOLANA VANITY ADDRESS GENERATOR · CPU MULTI-THREAD</h1>
+
+  <div class="panel">
+    <div class="row"><span class="k">gpu détecté</span><span class="v" id="s_gpu">—</span></div>
+    <div class="row"><span class="k">cpu cores</span><span class="v" id="s_cpu">—</span></div>
+    <div class="row"><span class="k">mode</span><span class="v">
+      <select id="sel_mode">
+        <option value="cpu" selected>CPU only (recommandé)</option>
+        <option value="gpu" disabled>GPU only — non disponible (Ed25519 sur GPU = projet en soi)</option>
+        <option value="both" disabled>GPU + CPU — idem</option>
+      </select>
+    </span></div>
+  </div>
+
+  <div class="panel">
+    <div class="row"><span class="k">commence par (prefix)</span><span class="v">
+      <input id="in_prefix" type="text" placeholder="ex: SoL" autocomplete="off">
+    </span></div>
+    <div class="row"><span class="k">termine par (suffix)</span><span class="v">
+      <input id="in_suffix" type="text" placeholder="ex: PUMP" autocomplete="off">
+    </span></div>
+    <div class="row"><span class="k">case</span><span class="v">
+      <select id="sel_case">
+        <option value="exact" selected>exact (sensible à la casse)</option>
+        <option value="ignore">ignore la casse</option>
+        <option value="upper">forcer MAJUSCULE</option>
+        <option value="lower">forcer minuscule</option>
+      </select>
+    </span></div>
+    <div class="row"><span class="k">cpu threads</span><span class="v">
+      <input id="in_threads" type="number" min="1" max="64" step="1" value="0"
+             title="0 = auto (cores - 1)" style="min-width:5em;">
+    </span></div>
+    <div class="row"><span class="k">stop after</span><span class="v">
+      <input id="in_stopafter" type="number" min="1" max="9999" step="1" value="1"
+             title="arrêter après N matches trouvés" style="min-width:5em;">
+    </span></div>
+    <div class="hint">
+      Alphabet base58 Solana : <code>123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz</code>
+      (pas de <code>0</code>, <code>O</code>, <code>I</code>, <code>l</code>).
+      Une address commence presque toujours par une <b>lettre</b> (1er char ∈ A-Z/a-z), donc préfixe purement numérique ≈ jamais.
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="row"><span class="k">tries</span><span class="v" id="s_tries">0</span></div>
+    <div class="row"><span class="k">tries/sec</span><span class="v" id="s_rate">—</span></div>
+    <div class="row"><span class="k">expected tries</span><span class="v" id="s_expect">—</span></div>
+    <div class="row"><span class="k">expected time</span><span class="v" id="s_etime">—</span></div>
+    <div class="row"><span class="k">found</span><span class="v" id="s_found">0</span></div>
+    <div id="status"></div>
+    <div class="actions">
+      <button id="btn_start">▶ start</button>
+      <button id="btn_stop" disabled>⏹ stop</button>
+      <button id="btn_clear">clear results</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="hint" style="margin-bottom:.6rem;">
+      ⚠ Les private keys s'affichent en clair ci-dessous. Tout est généré <b>localement dans votre navigateur</b>,
+      rien n'est envoyé sur le réseau. Sauvegardez la clé immédiatement, n'importez que dans un wallet de confiance.
+    </div>
+    <div id="results"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl.min.js"></script>
+<script>
+"use strict";
+
+const $ = id => document.getElementById(id);
+const setStatus = (msg, cls="") => { const el=$("status"); el.textContent=msg; el.className=cls; };
+
+// Base58 alphabet (Bitcoin / Solana)
+const B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+const B58_SET = new Set(B58);
+
+// ── GPU + CPU detection (display only — vanity is CPU-only here) ───────
+function webglRendererName() {
+  try {
+    const c = document.createElement("canvas");
+    const gl = c.getContext("webgl2") || c.getContext("webgl");
+    if (!gl) return null;
+    const ext = gl.getExtension("WEBGL_debug_renderer_info");
+    if (!ext) return gl.getParameter(gl.RENDERER) || null;
+    return gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) || null;
+  } catch { return null; }
+}
+async function detectGPU() {
+  const wgl = webglRendererName();
+  let wgpu = null;
+  if (navigator.gpu) {
+    try {
+      const adapter = await navigator.gpu.requestAdapter({ powerPreference: "high-performance" });
+      if (adapter) {
+        if (adapter.info) {
+          const i = adapter.info;
+          wgpu = [i.vendor, i.architecture, i.device, i.description].filter(Boolean).join(" / ");
+        } else if (adapter.requestAdapterInfo) {
+          const i = await adapter.requestAdapterInfo();
+          wgpu = [i.vendor, i.architecture, i.device, i.description].filter(Boolean).join(" / ");
+        }
+      }
+    } catch {}
+  }
+  $("s_gpu").textContent = (wgl || wgpu || "(non détecté)") + "  ·  inutilisé pour vanity Solana";
+  $("s_cpu").textContent = (navigator.hardwareConcurrency || "?") + " threads logiques";
+}
+
+// ── Filter validation ──────────────────────────────────────────────────
+function validateAffix(s, caseMode) {
+  // Allowed chars depending on case mode. Returns null if OK, error string otherwise.
+  if (s === "") return null;
+  for (const ch of s) {
+    if (!B58_SET.has(ch)) return "caractère invalide '" + ch + "' (pas dans l'alphabet base58)";
+  }
+  if (caseMode === "upper") {
+    for (const ch of s) if (/[a-z]/.test(ch)) return "case=MAJUSCULE mais '" + ch + "' est minuscule";
+  } else if (caseMode === "lower") {
+    for (const ch of s) if (/[A-Z]/.test(ch)) return "case=minuscule mais '" + ch + "' est MAJUSCULE";
+  }
+  return null;
+}
+
+function refreshValidation() {
+  const caseMode = $("sel_case").value;
+  const pref = $("in_prefix").value;
+  const suff = $("in_suffix").value;
+  const ePref = validateAffix(pref, caseMode);
+  const eSuff = validateAffix(suff, caseMode);
+  $("in_prefix").classList.toggle("bad", !!ePref);
+  $("in_suffix").classList.toggle("bad", !!eSuff);
+  if (ePref) { setStatus("prefix: " + ePref, "err"); return false; }
+  if (eSuff) { setStatus("suffix: " + eSuff, "err"); return false; }
+  // Estimate expected tries (purely combinatoric on free chars)
+  // P(match) = (1/58)^(matchable_chars) ; for case=ignore double the alphabet
+  // hits-per-char for letters, so approx: per letter slot p=2/58, per digit slot p=1/58.
+  let logp = 0;
+  const counts = (str) => {
+    let n = 0;
+    for (const ch of str) {
+      if (caseMode === "ignore" && /[A-Za-z]/.test(ch)) logp += Math.log(2/58);
+      else                                              logp += Math.log(1/58);
+      n++;
+    }
+    return n;
+  };
+  const total = counts(pref) + counts(suff);
+  if (total === 0) { $("s_expect").textContent = "—"; $("s_etime").textContent = "—"; return true; }
+  const expectedTries = Math.exp(-logp);
+  $("s_expect").textContent = expectedTries.toExponential(2) + " (≈ moyenne)";
+  // Time = expected / current rate (if known)
+  const rate = lastRate;
+  if (rate > 0) {
+    const sec = expectedTries / rate;
+    $("s_etime").textContent = humanTime(sec);
+  } else {
+    $("s_etime").textContent = "(démarrer pour mesurer)";
+  }
+  return true;
+}
+
+function humanTime(sec) {
+  if (!isFinite(sec)) return "∞";
+  if (sec < 60) return sec.toFixed(1) + " s";
+  if (sec < 3600) return (sec/60).toFixed(1) + " min";
+  if (sec < 86400) return (sec/3600).toFixed(1) + " h";
+  if (sec < 86400*365) return (sec/86400).toFixed(1) + " j";
+  return (sec/86400/365).toFixed(2) + " ans";
+}
+
+// ── Worker source (inline blob) ────────────────────────────────────────
+const WORKER_SRC = String.raw`
+self.importScripts("https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl.min.js");
+
+const B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+const B58_MAP = new Uint8Array(128);
+for (let i = 0; i < 128; i++) B58_MAP[i] = 255;
+for (let i = 0; i < B58.length; i++) B58_MAP[B58.charCodeAt(i)] = i;
+
+// Encode 32-byte buffer to base58 string. Bitcoin-style: leading-zero-byte → leading '1'.
+function encodeB58(bytes) {
+  let zeros = 0;
+  while (zeros < bytes.length && bytes[zeros] === 0) zeros++;
+  // Convert to base58 by repeated division
+  const size = ((bytes.length - zeros) * 138 / 100 + 1) | 0;
+  const b58 = new Uint8Array(size);
+  let length = 0;
+  for (let i = zeros; i < bytes.length; i++) {
+    let carry = bytes[i];
+    let j = 0;
+    for (let k = size - 1; (carry !== 0 || j < length) && k >= 0; k--, j++) {
+      carry += 256 * b58[k];
+      b58[k] = carry % 58;
+      carry = (carry / 58) | 0;
+    }
+    length = j;
+  }
+  // Skip leading zeros in b58
+  let it = size - length;
+  while (it < size && b58[it] === 0) it++;
+  let str = "1".repeat(zeros);
+  for (; it < size; it++) str += B58[b58[it]];
+  return str;
+}
+
+let stop = false;
+let prefix = "", suffix = "", caseMode = "exact";
+let stopAfter = 1, foundCount = 0;
+let myIdx = 0, total = 1;
+
+function matches(addr) {
+  let p = prefix, s = suffix, a = addr;
+  if (caseMode === "ignore" || caseMode === "upper" || caseMode === "lower") {
+    a = addr.toLowerCase();
+    p = prefix.toLowerCase();
+    s = suffix.toLowerCase();
+  }
+  if (p && !a.startsWith(p)) return false;
+  if (s && !a.endsWith(s))   return false;
+  // For upper/lower modes, also check that the matched chars are actually upper/lower in the original
+  if (caseMode === "upper") {
+    for (let i = 0; i < prefix.length; i++) {
+      const ch = addr[i];
+      if (/[a-z]/.test(ch)) return false;
+    }
+    for (let i = 0; i < suffix.length; i++) {
+      const ch = addr[addr.length - suffix.length + i];
+      if (/[a-z]/.test(ch)) return false;
+    }
+  } else if (caseMode === "lower") {
+    for (let i = 0; i < prefix.length; i++) {
+      const ch = addr[i];
+      if (/[A-Z]/.test(ch)) return false;
+    }
+    for (let i = 0; i < suffix.length; i++) {
+      const ch = addr[addr.length - suffix.length + i];
+      if (/[A-Z]/.test(ch)) return false;
+    }
+  }
+  return true;
+}
+
+function run() {
+  const REPORT_EVERY = 2000;
+  let local = 0;
+  let last = performance.now();
+  while (!stop) {
+    const kp = self.nacl.sign.keyPair();
+    const addr = encodeB58(kp.publicKey);
+    if (matches(addr)) {
+      // Solana wallets typically expect the 64-byte secretKey (seed||pub) base58-encoded
+      const skB58 = encodeB58(kp.secretKey);
+      self.postMessage({ type: "found", address: addr, secretKey: skB58, secretBytes: Array.from(kp.secretKey) });
+      foundCount++;
+      if (foundCount >= stopAfter) { stop = true; break; }
+    }
+    local++;
+    if (local >= REPORT_EVERY) {
+      const now = performance.now();
+      self.postMessage({ type: "progress", tries: local, dt: now - last });
+      local = 0;
+      last = now;
+    }
+  }
+  if (local > 0) self.postMessage({ type: "progress", tries: local, dt: performance.now() - last });
+  self.postMessage({ type: "done" });
+}
+
+self.onmessage = (e) => {
+  const m = e.data;
+  if (m.type === "init") { myIdx = m.idx; total = m.total; }
+  else if (m.type === "params") {
+    prefix = m.prefix; suffix = m.suffix; caseMode = m.caseMode;
+    stopAfter = m.stopAfter | 0; foundCount = 0;
+  }
+  else if (m.type === "start") { stop = false; run(); }
+  else if (m.type === "stop")  { stop = true; }
+};
+`;
+
+// ── App state ──────────────────────────────────────────────────────────
+let workers = [];
+let running = false;
+let triesAcc = 0n;
+let foundAcc = 0;
+let rateSamples = [];
+let lastRate = 0;
+let stopAfter = 1;
+
+function effectiveThreadCount() {
+  const want = parseInt($("in_threads").value, 10);
+  if (Number.isFinite(want) && want > 0) return Math.min(want, 64);
+  return Math.max(1, (navigator.hardwareConcurrency || 4) - 1);
+}
+
+function fmt(n) {
+  n = Number(n);
+  const u = ["", "k", "M", "G"];
+  let i = 0; while (n >= 1000 && i < u.length-1) { n /= 1000; i++; }
+  return n.toFixed(2) + " " + u[i];
+}
+
+function updateUI() {
+  $("s_tries").textContent = triesAcc.toLocaleString("en-US");
+  // hashrate window
+  const now = performance.now();
+  while (rateSamples.length > 0 && now - rateSamples[0].t > 5000) rateSamples.shift();
+  const sum = rateSamples.reduce((s,x)=>s+x.h, 0);
+  const dt  = (now - (rateSamples[0]?.t ?? now)) / 1000;
+  lastRate  = dt > 0 ? sum / dt : 0;
+  $("s_rate").textContent = lastRate ? fmt(lastRate) + " adr/s · " + workers.length + " threads" : "—";
+  $("s_found").textContent = String(foundAcc);
+  refreshValidation();
+}
+
+function appendResult({ address, secretKey, secretBytes }) {
+  const div = document.createElement("div");
+  div.className = "item";
+  const id = "r" + Math.random().toString(36).slice(2,8);
+  div.innerHTML =
+    '<div class="addr">' + address + ' <button class="copy" data-copy="' + address + '">copy</button></div>' +
+    '<div class="priv">private (base58, 64B): ' + secretKey + ' <button class="copy" data-copy="' + secretKey + '">copy</button></div>' +
+    '<div class="priv">private (json bytes): [' + secretBytes.join(',') + '] <button class="copy" data-copy="[' + secretBytes.join(',') + ']">copy</button></div>' +
+    '<div class="meta">trouvé après ' + triesAcc.toLocaleString("en-US") + ' tries</div>';
+  const results = $("results");
+  results.insertBefore(div, results.firstChild);
+}
+
+document.addEventListener("click", (e) => {
+  const t = e.target;
+  if (t.classList && t.classList.contains("copy")) {
+    navigator.clipboard.writeText(t.dataset.copy).then(() => {
+      const old = t.textContent;
+      t.textContent = "copied";
+      setTimeout(() => t.textContent = old, 1200);
+    });
+  }
+});
+
+// ── Engine ─────────────────────────────────────────────────────────────
+function startGen() {
+  if (running) return;
+  if (!refreshValidation()) return;
+  const prefix = $("in_prefix").value;
+  const suffix = $("in_suffix").value;
+  const caseMode = $("sel_case").value;
+  if (!prefix && !suffix) { setStatus("Entrez au moins un prefix ou un suffix.", "warn"); return; }
+  stopAfter = Math.max(1, parseInt($("in_stopafter").value, 10) || 1);
+
+  triesAcc = 0n; foundAcc = 0; rateSamples = [];
+  $("s_tries").textContent = "0"; $("s_found").textContent = "0";
+
+  const N = effectiveThreadCount();
+  const blob = new Blob([WORKER_SRC], { type: "application/javascript" });
+  const url = URL.createObjectURL(blob);
+  workers = [];
+  for (let i = 0; i < N; i++) {
+    const w = new Worker(url);
+    w.postMessage({ type: "init", idx: i, total: N });
+    w.postMessage({ type: "params", prefix, suffix, caseMode, stopAfter });
+    w.onmessage = (e) => {
+      const m = e.data;
+      if (m.type === "progress") {
+        triesAcc += BigInt(m.tries);
+        rateSamples.push({ t: performance.now(), h: m.tries });
+      } else if (m.type === "found") {
+        foundAcc++;
+        appendResult(m);
+        if (foundAcc >= stopAfter) {
+          // Tell every worker to stop
+          for (const w2 of workers) w2.postMessage({ type: "stop" });
+          setStatus("✓ " + foundAcc + " match(es) trouvé(s) — arrêt.");
+        }
+      } else if (m.type === "done") {
+        // Worker exited its loop. If all are done, finalize.
+        // (no-op — we manage UI on stop click)
+      }
+    };
+    w.postMessage({ type: "start" });
+    workers.push(w);
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+  running = true;
+  $("btn_start").disabled = true;
+  $("btn_stop").disabled = false;
+  setStatus("recherche · " + N + " threads · prefix='" + prefix + "' suffix='" + suffix + "' case=" + caseMode);
+}
+
+function stopGen() {
+  for (const w of workers) { try { w.postMessage({ type: "stop" }); w.terminate(); } catch {} }
+  workers = [];
+  running = false;
+  $("btn_start").disabled = false;
+  $("btn_stop").disabled = true;
+  setStatus("⏹ stoppé.");
+}
+
+// ── Wire UI ────────────────────────────────────────────────────────────
+$("btn_start").onclick = startGen;
+$("btn_stop").onclick  = stopGen;
+$("btn_clear").onclick = () => { $("results").innerHTML = ""; foundAcc = 0; $("s_found").textContent = "0"; };
+
+["in_prefix","in_suffix","sel_case"].forEach(id => {
+  $(id).addEventListener("input",  refreshValidation);
+  $(id).addEventListener("change", refreshValidation);
+});
+
+setInterval(updateUI, 300);
+
+// ── Boot ───────────────────────────────────────────────────────────────
+(async function boot() {
+  await detectGPU();
+  refreshValidation();
+  setStatus("Prêt. Saisissez un prefix/suffix puis ▶ start.");
+})();
+
+window.addEventListener("beforeunload", stopGen);
+</script>
+</body>
+</html>
