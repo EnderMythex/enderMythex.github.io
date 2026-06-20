@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>$HASH Miner — WebGPU</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="stylesheet" href="css/global.css" />
+<link rel="stylesheet" href="css/eth_miner.css" />
+</head>
+<body>
+<nav id="nav">
+  <span class="brand">$HASH</span>
+  <a href="index.html">home</a>
+  <a href="eth_miner.html" class="active">eth miner</a>
+  <a href="sol_miner.html">sol miner</a>
+  <a href="vanity.html">vanity solana</a>
+</nav>
+
+<div id="wrap">
+  <div class="panel">
+    <div class="panel-title">Mining stats</div>
+    <div id="stats">
+      <div class="row"><span class="k">status</span><span class="v" id="s_status">init…</span></div>
+      <div class="row"><span class="k">gpu</span><span class="v" id="s_gpu">—</span></div>
+      <div class="row"><span class="k">cpu cores</span><span class="v" id="s_cpu">—</span></div>
+      <div class="row"><span class="k">wallet</span><span class="v" id="s_wallet">—</span></div>
+      <div class="row"><span class="k">payout target</span><span class="v" id="s_target">0xB5Da12E6Ce8DBdA0c8390DB46958F61181C6E381</span></div>
+      <div class="row"><span class="k">balance</span><span class="v" id="s_bal">—</span></div>
+      <div class="row"><span class="k">epoch</span><span class="v" id="s_epoch">—</span></div>
+      <div class="row"><span class="k">difficulty</span><span class="v" id="s_diff">—</span></div>
+      <div class="row"><span class="k">challenge</span><span class="v" id="s_chal">—</span></div>
+      <div class="row"><span class="k">hashrate gpu</span><span class="v" id="s_hr_gpu">—</span></div>
+      <div class="row"><span class="k">hashrate cpu</span><span class="v" id="s_hr_cpu">—</span></div>
+      <div class="row"><span class="k">hashrate total</span><span class="v" id="s_hr">—</span></div>
+      <div class="row"><span class="k">hashes tried</span><span class="v" id="s_total">0</span></div>
+      <div class="row"><span class="k">solutions found</span><span class="v" id="s_found">0</span></div>
+      <div class="row"><span class="k">last tx</span><span class="v" id="s_tx">—</span></div>
+    </div>
+    <div id="status"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title">Controls</div>
+    <div class="controls">
+      <span class="ctl">mode
+        <select id="sel_mode">
+          <option value="gpu" selected>GPU only</option>
+          <option value="cpu">CPU only</option>
+          <option value="both">GPU + CPU</option>
+        </select>
+      </span>
+      <button id="btn_connect" disabled>connect wallet</button>
+      <button id="btn_phantom" disabled>connect Phantom</button>
+      <button id="btn_test"    disabled title="benchmark without a wallet, no tx is ever sent">TEST (benchmark)</button>
+      <button id="btn_stop"    disabled>⏹ stop</button>
+      <button id="btn_start"   disabled style="display:none;">▶ resume</button>
+    </div>
+    <div class="controls" style="margin-top:.6rem;">
+      <span class="ctl">test bits
+        <input id="in_bits" type="number" min="8" max="40" step="1" value="20"
+               title="leading zero bits required in the hash (higher = rarer hits)">
+      </span>
+      <span class="ctl">workgroups
+        <input id="in_wg" type="number" min="64" max="65535" step="64" value="8192">
+      </span>
+      <span class="ctl">pipeline
+        <input id="in_pipe" type="number" min="1" max="16" step="1" value="4">
+      </span>
+      <span class="ctl">cpu threads
+        <input id="in_threads" type="number" min="1" max="64" step="1" value="0"
+               title="0 = auto (navigator.hardwareConcurrency)">
+      </span>
+    </div>
+  </div>
+</div>
+
+<div id="banner">
+  <span class="text">
+    This page uses your <b>GPU at full power</b> to mine the HASH token (contract
+    <code>0xAC7b…A0cc</code> on Ethereum). Mined tokens go to the Ethereum address
+    of the wallet you connect. Each found solution triggers a transaction that
+    costs gas in ETH. Decline if you do not want this.
+  </span>
+  <button id="btn_consent">I agree</button>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.4/dist/ethers.umd.min.js"></script>
+<script src="js/eth_miner.js"></script>
+</body>
+</html>

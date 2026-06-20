@@ -1,0 +1,112 @@
+/* index.css */
+#wrap {
+  padding: 4.5rem 1.5rem 3rem;
+}
+
+#hero {
+  margin-bottom: 1.5rem;
+}
+
+#hero h1 {
+  font-size: clamp(1.1rem, 3vw, 1.6rem);
+  font-weight: 600;
+  letter-spacing: .18em;
+  color: #fff;
+  margin: 0 0 .5rem;
+}
+
+#hero p {
+  color: #888;
+  font-size: clamp(.8rem, 1.6vw, .9rem);
+  line-height: 1.7;
+  margin: 0;
+  max-width: 60ch;
+}
+
+.tools {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.tool-card {
+  border: 1px solid #222;
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: .5rem;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color .15s;
+}
+
+.tool-card:hover {
+  border-color: #555;
+}
+
+.tool-card .tc-tag {
+  color: #666;
+  font-size: .68rem;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+}
+
+.tool-card .tc-name {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+}
+
+.tool-card .tc-desc {
+  color: #888;
+  font-size: .8rem;
+  line-height: 1.6;
+  flex: 1;
+}
+
+.tool-card .tc-link {
+  color: #aaa;
+  font-size: .78rem;
+  margin-top: .3rem;
+}
+
+.tool-card:hover .tc-link {
+  color: #fff;
+}
+
+.about.panel .row {
+  display: grid;
+  grid-template-columns: 10em 1fr;
+  gap: .4rem 1rem;
+  font-size: .83rem;
+  line-height: 1.7;
+}
+
+.about.panel .k {
+  color: #666;
+}
+
+.about.panel .v {
+  color: #aaa;
+}
+
+@media (max-width: 560px) {
+  #wrap {
+    padding: 3.5rem 1rem 2rem;
+  }
+
+  .tools {
+    grid-template-columns: 1fr;
+  }
+
+  .about.panel .row {
+    grid-template-columns: 1fr;
+  }
+
+  .about.panel .k {
+    color: #555;
+    font-size: .72rem;
+    margin-top: .3rem;
+  }
+}

@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Solana PoW Miner — WebGPU</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<link rel="stylesheet" href="css/global.css" />
+<link rel="stylesheet" href="css/sol_miner.css" />
+</head>
+<body>
+<nav id="nav">
+  <span class="brand">$HASH</span>
+  <a href="index.html">home</a>
+  <a href="eth_miner.html">eth miner</a>
+  <a href="sol_miner.html" class="active">sol miner</a>
+  <a href="vanity.html">vanity solana</a>
+</nav>
+
+<div id="wrap">
+  <!-- Stats Panel -->
+  <div class="panel">
+    <div class="panel-title">Solana Mining Stats</div>
+    <div id="stats">
+      <div class="row"><span class="k">status</span><span class="v" id="s_status">Ready...</span></div>
+      <div class="row"><span class="k">gpu</span><span class="v" id="s_gpu">—</span></div>
+      <div class="row"><span class="k">cpu cores</span><span class="v" id="s_cpu">—</span></div>
+      <div class="row"><span class="k">wallet</span><span class="v" id="s_wallet">—</span></div>
+      <div class="row"><span class="k">challenge</span><span class="v" id="s_chal">—</span></div>
+      <div class="row"><span class="k">difficulty</span><span class="v" id="s_diff">—</span></div>
+      <div class="row"><span class="k">balance</span><span class="v" id="s_bal">—</span></div>
+      <div class="row"><span class="k">hashrate gpu</span><span class="v" id="s_hr_gpu">—</span></div>
+      <div class="row"><span class="k">hashrate cpu</span><span class="v" id="s_hr_cpu">—</span></div>
+      <div class="row"><span class="k">hashrate total</span><span class="v" id="s_hr">—</span></div>
+      <div class="row"><span class="k">hashes tried</span><span class="v" id="s_total">0</span></div>
+      <div class="row"><span class="k">solutions found</span><span class="v" id="s_found">0</span></div>
+      <div class="row"><span class="k">last tx</span><span class="v" id="s_tx">—</span></div>
+    </div>
+    <div id="status"></div>
+  </div>
+
+  <!-- Controls Panel -->
+  <div class="panel">
+    <div class="panel-title">Controls</div>
+    <div class="controls">
+      <span class="ctl">mode
+        <select id="sel_mode">
+          <option value="gpu" selected>GPU only</option>
+          <option value="cpu">CPU only</option>
+          <option value="both">GPU + CPU</option>
+        </select>
+      </span>
+      <button id="btn_connect" disabled>connect Phantom</button>
+      <button id="btn_test"    disabled title="Benchmark without a wallet, no transaction is ever sent">TEST (benchmark)</button>
+      <button id="btn_stop"    disabled>⏹ stop</button>
+      <button id="btn_start"   disabled style="display:none;">▶ resume</button>
+    </div>
+    <div class="controls" style="margin-top:.6rem;">
+      <span class="ctl">test difficulty
+        <input id="in_bits" type="number" min="1" max="8" step="1" value="3"
+               title="Number of leading zero bytes required in the hash (ex: 3 = 24 zero bits)">
+      </span>
+      <span class="ctl">workgroups
+        <input id="in_wg" type="number" min="64" max="65535" step="64" value="8192">
+      </span>
+      <span class="ctl">pipeline
+        <input id="in_pipe" type="number" min="1" max="16" step="1" value="4">
+      </span>
+      <span class="ctl">cpu threads
+        <input id="in_threads" type="number" min="1" max="64" step="1" value="0"
+               title="0 = auto (navigator.hardwareConcurrency)">
+      </span>
+    </div>
+  </div>
+
+  <!-- Configuration Panel -->
+  <div class="panel">
+    <div class="panel-title">Solana Token Configuration</div>
+    <div class="guide-intro" style="font-size:.78rem; color:#888; margin-bottom:.5rem;">
+      Enter the addresses of your token and Solana PoW smart contract. Settings are saved locally in your browser.
+    </div>
+    <div class="config-grid">
+      <div class="config-item">
+        <label>Solana RPC URL</label>
+        <input id="in_rpc" type="text" placeholder="https://api.devnet.solana.com" />
+      </div>
+      <div class="config-item">
+        <label>Program ID (PoW Smart Contract)</label>
+        <input id="in_prog" type="text" placeholder="YourProgramID111111111111111111111111111" />
+      </div>
+      <div class="config-item">
+        <label>Mint Address (SPL Memecoin)</label>
+        <input id="in_mint" type="text" placeholder="JetonMintAddress111111111111111111" />
+      </div>
+      <div class="config-item">
+        <label>PDA Address (Mining State Account)</label>
+        <input id="in_pda" type="text" placeholder="PDAStateAccountAddress1111111111111" />
+      </div>
+    </div>
+    <div class="controls" style="margin-top:.8rem;">
+      <button id="btn_save_config">Save Configuration</button>
+    </div>
+  </div>
+
+  <!-- Button to toggle Guide -->
+  <button id="btn_toggle_guide" class="guide-toggle-btn">💡 How to create & mine your own Solana Memecoin (PoW)?</button>
+
+  <!-- Solana Guide Panel -->
+  <div class="panel guide-panel" id="solana_guide_panel">
+    <div class="panel-title">Guide: PoW Memecoin on Solana</div>
+    
+    <div class="guide-intro">
+      Unlike Ethereum or Bitcoin, <strong>Solana is a Proof-of-Stake (PoS) blockchain</strong>. There is no native "mining". However, you can distribute your own memecoin fairly using <strong>application-level Proof-of-Work (PoW)</strong> (similar to the ORE project on Solana).
+      <br><br>
+      Here is how to design, deploy, and mine your own Solana PoW memecoin.
+    </div>
+
+    <div class="guide-alert">
+      <strong>ℹ️ The Concept:</strong> You deploy a Solana program (smart contract) that holds the Mint Authority of your token. Users send it a transaction containing a proof of computation (a valid <code>nonce</code>) to receive tokens in reward.
+    </div>
+
+    <div class="guide-steps">
+      <div class="guide-step">
+        <h3>Step 1: The Smart Contract (Rust / Anchor)</h3>
+        This program stores a <code>challenge</code> (updated after each successful mine) and a <code>difficulty</code>. It exposes a <code>mine</code> instruction that validates the hash equation.
+      </div>
+      
+      <div class="guide-step">
+        <h3>Step 2: The Miner Client (JavaScript / WebGPU)</h3>
+        Your web application (or CLI) queries the program's state account to fetch the current <code>challenge</code>, computes the hash in a loop by varying the <code>nonce</code>, and submits the transaction to Solana.
+      </div>
+    </div>
+
+    <!-- Code Block Tabs -->
+    <div class="guide-tabs">
+      <button class="guide-tab-btn active" onclick="switchGuideTab('tab_anchor')">Anchor Program (Rust)</button>
+      <button class="guide-tab-btn" onclick="switchGuideTab('tab_client')">Miner Client (JS)</button>
+      <button class="guide-tab-btn" onclick="switchGuideTab('tab_steps')">Deployment Steps</button>
+    </div>
+
+    <!-- Tab: Anchor Program -->
+    <div class="guide-tab-content active" id="tab_anchor">
+      <div class="guide-code-header">
+        <span>src/lib.rs (Anchor)</span>
+        <span>Rust</span>
+      </div>
+      <pre><code>use anchor_lang::prelude::*;
+use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount};
+use solana_program::keccak;
+
+declare_id!("YourProgramID111111111111111111111111111");
+
+#[program]
+pub mod solana_pow_miner {
+    use super::*;
+
+    // Initialize the mining state (genesis challenge and difficulty)
+    pub fn initialize(ctx: Context&lt;Initialize&gt;, difficulty: u32) -&gt; Result&lt;()&gt; {
+        let state = &amp;mut ctx.accounts.mining_state;
+        state.challenge = keccak::hash(b"genesis_challenge").to_bytes();
+        state.difficulty = difficulty; // e.g., 3 (number of zero bytes required)
+        state.mint = ctx.accounts.token_mint.key();
+        Ok(())
+    }
+
+    // Validate Proof-of-Work and mint tokens
+    pub fn mine(ctx: Context&lt;Mine&gt;, nonce: u64) -&gt; Result&lt;()&gt; {
+        let state = &amp;mut ctx.accounts.mining_state;
+        let miner = ctx.accounts.miner.key();
+
+        // 1. Rebuild the hash buffer: challenge + miner_pubkey + nonce
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(&amp;state.challenge);
+        bytes.extend_from_slice(&amp;miner.to_bytes());
+        bytes.extend_from_slice(&amp;nonce.to_le_bytes());
+
+        // 2. Compute the Keccak256 hash
+        let hash = keccak::hash(&amp;bytes).to_bytes();
+
+        // 3. Verify difficulty (the first N bytes of the hash must be 0)
+        for i in 0..(state.difficulty as usize) {
+            require!(hash[i] == 0, MinerError::InvalidProof);
+        }
+
+        // 4. Mint tokens as reward
+        let reward_amount = 1000 * 10u64.pow(9); // 1000 tokens (9 decimals)
+        let seeds = &amp;[b"mining_state".as_ref(), &amp;[ctx.bumps.mining_state]];
+        let signer = &amp;[&amp;seeds[..]];
+        
+        token::mint_to(
+            Context::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+                MintTo {
+                    mint: ctx.accounts.token_mint.to_account_info(),
+                    to: ctx.accounts.miner_token_account.to_account_info(),
+                    authority: state.to_account_info(),
+                },
+                signer,
+            ),
+            reward_amount,
+        )?;
+
+        // 5. Update the challenge for the next miner
+        state.challenge = hash;
+        Ok(())
+    }
+}
+
+#[derive(Accounts)]
+pub struct Initialize&lt;'info&gt; {
+    #[account(init, payer = admin, space = 8 + 32 + 4 + 32, seeds = [b"mining_state"], bump)]
+    pub mining_state: Account&lt;'info, MiningState&gt;,
+    pub token_mint: Account&lt;'info, Mint&gt;,
+    #[account(mut)]
+    pub admin: Signer&lt;'info&gt;,
+    pub system_program: Program&lt;'info&gt;,
+}
+
+#[derive(Accounts)]
+pub struct Mine&lt;'info&gt; {
+    #[account(mut, seeds = [b"mining_state"], bump)]
+    pub mining_state: Account&lt;'info, MiningState&gt;,
+    #[account(mut)]
+    pub token_mint: Account&lt;'info, Mint&gt;,
+    #[account(mut)]
+    pub miner_token_account: Account&lt;'info, TokenAccount&gt;,
+    #[account(mut)]
+    pub miner: Signer&lt;'info&gt;,
+    pub token_program: Program&lt;'info, Token&gt;,
+}
+
+#[account]
+pub struct MiningState {
+    pub challenge: [u8; 32],
+    pub difficulty: u32,
+    pub mint: Pubkey,
+}
+
+#[error_code]
+pub mod MinerError {
+    #[msg("The provided PoW proof is invalid.")]
+    InvalidProof,
+}</code></pre>
+    </div>
+
+    <!-- Tab: Miner Client -->
+    <div class="guide-tab-content" id="tab_client">
+      <div class="guide-code-header">
+        <span>miner_client.js</span>
+        <span>JavaScript</span>
+      </div>
+      <pre><code>import { Connection, PublicKey, Keypair, Transaction } from '@solana/web3.js';
+import * as anchor from '@coral-xyz/anchor';
+import { keccak_256 } from 'js-sha3';
+
+const connection = new Connection("https://api.mainnet-beta.solana.com");
+const programId = new PublicKey("YourProgramID111111111111111111111111111");
+
+// Fetch state from blockchain
+async function getChallenge(miningStatePDA) {
+    const info = await connection.getAccountInfo(miningStatePDA);
+    // Decode data from account using layout
+    const challenge = info.data.slice(8, 8 + 32); 
+    const difficulty = info.data.readUInt32LE(8 + 32);
+    return { challenge, difficulty };
+}
+
+// CPU mining loop
+function mineLocal(challenge, minerPubkey, difficulty) {
+    let nonce = 0n;
+    const minerBytes = minerPubkey.toBytes();
+    while (true) {
+        // Concatenate challenge (32 bytes) + miner (32 bytes) + nonce (8 bytes LE)
+        const buf = new Uint8Array(32 + 32 + 8);
+        buf.set(challenge, 0);
+        buf.set(minerBytes, 32);
+        
+        let tempNonce = nonce;
+        for (let i = 0; i &lt; 8; i++) {
+            buf[64 + i] = Number(tempNonce &amp; 255n);
+            tempNonce &gt;&gt;= 8n;
+        }
+
+        const hash = new Uint8Array(keccak_256.arrayBuffer(buf));
+        
+        // Verify if difficulty target is met
+        let success = true;
+        for (let i = 0; i &lt; difficulty; i++) {
+            if (hash[i] !== 0) {
+                success = false;
+                break;
+            }
+        }
+
+        if (success) {
+            return nonce;
+        }
+        nonce++;
+    }
+}</code></pre>
+    </div>
+
+    <!-- Tab: Steps -->
+    <div class="guide-tab-content" id="tab_steps">
+      <div class="guide-steps" style="margin: 0;">
+        <div class="guide-step">
+          <h3>1. Create the SPL Token</h3>
+          Generate a standard SPL token mint (via Solana CLI or SPL-Token UI). Retain no Mint Authority; instead, transfer Mint Authority solely to your smart contract's PDA (Program Derived Address) for <code>mining_state</code>.
+        </div>
+        <div class="guide-step">
+          <h3>2. Deploy the Smart Contract</h3>
+          Compile and deploy the provided Anchor Rust program on Solana (Devnet or Mainnet). Call the <code>initialize</code> instruction with the token mint address created in Step 1.
+        </div>
+        <div class="guide-step">
+          <h3>3. Distribute the Client</h3>
+          Host your WebGPU miner (like this page) or distribute a command-line tool (CLI) written in Rust/NodeJS. Users connect Phantom, mine locally, and submit transactions paying micro-gas fees in SOL.
+        </div>
+        <div class="guide-step">
+          <h3>💡 Advantage of PoW Memecoin</h3>
+          It is the fairest distribution mechanism (fair-launch): no capital required upfront, no presale, and no snipe bots. Only computer or graphics card hash power determines token allocation!
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="banner">
+  <span class="text">
+    This miner uses your <b>graphics card</b> and <b>processor</b> to mine your custom Solana PoW memecoin. Connect your Phantom Wallet and edit the configuration addresses above to link it to your token.
+  </span>
+  <button id="btn_consent">I agree</button>
+</div>
+
+<script src="https://unpkg.com/@solana/web3.js@1.95.8/lib/index.iife.min.js"></script>
+<script src="js/sol_miner.js"></script>
+</body>
+</html>

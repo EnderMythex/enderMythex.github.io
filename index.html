@@ -1,110 +1,86 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8" />
-<title>$HASH Tools</title>
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<style>
-  html, body { margin:0; padding:0; min-height:100%; background:#000; color:#fff;
-               font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-  #nav { position:fixed; top:0; left:0; right:0; background:#0a0a0a; border-bottom:1px solid #222;
-         padding:.5rem 1rem; display:flex; gap:1.5rem; align-items:center; font-size:.85rem; z-index:10;
-         flex-wrap:wrap; }
-  #nav .brand { color:#888; font-weight:600; letter-spacing:.18em; margin-right:1rem; }
-  #nav a { color:#aaa; text-decoration:none; padding:.2rem .4rem; border-bottom:2px solid transparent; }
-  #nav a:hover { color:#fff; }
-  #nav a.active { color:#fff; border-bottom-color:#fff; }
-
-  #wrap { padding:4.5rem 1.5rem 3rem; max-width:860px; margin:0 auto; box-sizing:border-box; }
-
-  .panel { border:1px solid #222; padding:1rem 1.2rem; margin-bottom:1rem; }
-  .panel-title { color:#666; font-size:.7rem; letter-spacing:.2em; text-transform:uppercase;
-                 margin-bottom:.8rem; border-bottom:1px solid #1a1a1a; padding-bottom:.4rem; }
-
-  #hero { margin-bottom:1.5rem; }
-  #hero h1 { font-size:clamp(1.1rem, 3vw, 1.6rem); font-weight:600; letter-spacing:.18em;
-             color:#fff; margin:0 0 .5rem; }
-  #hero p  { color:#888; font-size:clamp(.8rem, 1.6vw, .9rem); line-height:1.7;
-             margin:0; max-width:60ch; }
-
-  .tools { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
-
-  .tool-card { border:1px solid #222; padding:1.2rem; display:flex; flex-direction:column; gap:.5rem;
-               text-decoration:none; color:inherit; transition:border-color .15s; }
-  .tool-card:hover { border-color:#555; }
-  .tool-card .tc-tag  { color:#666; font-size:.68rem; letter-spacing:.2em; text-transform:uppercase; }
-  .tool-card .tc-name { color:#fff; font-size:1rem; font-weight:600; letter-spacing:.06em; }
-  .tool-card .tc-desc { color:#888; font-size:.8rem; line-height:1.6; flex:1; }
-  .tool-card .tc-link { color:#aaa; font-size:.78rem; margin-top:.3rem; }
-  .tool-card:hover .tc-link { color:#fff; }
-
-  .about.panel .row { display:grid; grid-template-columns:10em 1fr; gap:.4rem 1rem;
-                      font-size:.83rem; line-height:1.7; }
-  .about.panel .k { color:#666; }
-  .about.panel .v { color:#aaa; }
-
-  @media (max-width:560px) {
-    #wrap { padding:3.5rem 1rem 2rem; }
-    .tools { grid-template-columns:1fr; }
-    .about.panel .row { grid-template-columns:1fr; }
-    .about.panel .k { color:#555; font-size:.72rem; margin-top:.3rem; }
-  }
-</style>
+  <meta charset="utf-8" />
+  <title>$HASH Tools</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/index.css" />
 </head>
+
 <body>
-<nav id="nav">
-  <span class="brand">$HASH</span>
-  <a href="index.html" class="active">home</a>
-  <a href="miner.html">miner</a>
-  <a href="vanity.html">vanity solana</a>
-</nav>
+  <nav id="nav">
+    <span class="brand">$HASH</span>
+    <a href="index.html" class="active">home</a>
+    <a href="eth_miner.html">eth miner</a>
+    <a href="sol_miner.html">sol miner</a>
+    <a href="vanity.html">vanity solana</a>
+  </nav>
 
-<div id="wrap">
+  <div id="wrap">
 
-  <div id="hero">
-    <h1>$HASH · BROWSER TOOLS</h1>
-    <p>
-      A collection of browser-based crypto tools that run entirely on your machine —
-      no server, no backend, no data sent anywhere.
-      Uses WebGPU compute shaders and Web Workers to push your hardware to its limits.
-    </p>
+    <div id="hero">
+      <h1>$HASH · BROWSER TOOLS</h1>
+      <p>
+        A collection of browser-based crypto tools that run entirely on your machine —
+        no server, no backend, no data sent anywhere.
+        Uses WebGPU compute shaders and Web Workers to push your hardware to its limits.
+      </p>
+    </div>
+
+    <div class="tools">
+      <a class="tool-card" href="eth_miner.html">
+        <div class="tc-tag">Ethereum · WebGPU</div>
+        <div class="tc-name">ETH Miner</div>
+        <div class="tc-desc">
+          Mine the HASH token directly in your browser using WebGPU compute shaders
+          (keccak256). Auto-detects your GPU and tunes workgroup / pipeline settings.
+          Supports GPU-only, CPU-only, or both simultaneously. Connect any EIP-1193
+          wallet (MetaMask, Brave, Phantom) or run a benchmark without a wallet.
+        </div>
+        <div class="tc-link">→ eth_miner.html</div>
+      </a>
+
+      <a class="tool-card" href="sol_miner.html">
+        <div class="tc-tag">Solana · WebGPU</div>
+        <div class="tc-name">Solana Miner</div>
+        <div class="tc-desc">
+          Mine your custom Solana memecoin directly in your browser. Uses WebGPU compute
+          shaders or multi-threaded CPU workers to solve PoW hash challenges. Connect Phantom wallet,
+          configure your Program ID, Mint Address, and PDA, and start mining.
+        </div>
+        <div class="tc-link">→ sol_miner.html</div>
+      </a>
+
+      <a class="tool-card" href="vanity.html">
+        <div class="tc-tag">Solana · CPU Workers</div>
+        <div class="tc-name">Vanity Address</div>
+        <div class="tc-desc">
+          Generate Solana keypairs matching a custom prefix and/or suffix, entirely
+          in your browser with multi-threaded Web Workers (tweetnacl Ed25519).
+          Filter by exact case, ignore case, or force upper/lower. Live log shows
+          near-miss progress. Private keys are never sent anywhere.
+        </div>
+        <div class="tc-link">→ vanity.html</div>
+      </a>
+    </div>
+
+    <div class="panel about" style="margin-top:1rem;">
+      <div class="panel-title">About</div>
+      <div class="row"><span class="k">runtime</span><span class="v">100% client-side — no server, no API calls, no
+          telemetry</span></div>
+      <div class="row"><span class="k">miner tech</span><span class="v">WebGPU (WGSL keccak256 compute shader) + JS-SHA3
+          CPU workers</span></div>
+      <div class="row"><span class="k">vanity tech</span><span class="v">tweetnacl Ed25519 keypair generation in Web
+          Workers</span></div>
+      <div class="row"><span class="k">contract</span><span class="v">HASH token ·
+          0xAC7b5d06fa1e77D08aea40d46cB7C5923A87A0cc · Ethereum mainnet</span></div>
+      <div class="row"><span class="k">browser req.</span><span class="v">Chrome / Edge 113+ for WebGPU; any modern
+          browser for vanity</span></div>
+    </div>
+
   </div>
-
-  <div class="tools">
-    <a class="tool-card" href="miner.html">
-      <div class="tc-tag">Ethereum · WebGPU</div>
-      <div class="tc-name">HASH Miner</div>
-      <div class="tc-desc">
-        Mine the HASH token directly in your browser using WebGPU compute shaders
-        (keccak256). Auto-detects your GPU and tunes workgroup / pipeline settings.
-        Supports GPU-only, CPU-only, or both simultaneously. Connect any EIP-1193
-        wallet (MetaMask, Brave, Phantom) or run a benchmark without a wallet.
-      </div>
-      <div class="tc-link">→ miner.html</div>
-    </a>
-
-    <a class="tool-card" href="vanity.html">
-      <div class="tc-tag">Solana · CPU Workers</div>
-      <div class="tc-name">Vanity Address</div>
-      <div class="tc-desc">
-        Generate Solana keypairs matching a custom prefix and/or suffix, entirely
-        in your browser with multi-threaded Web Workers (tweetnacl Ed25519).
-        Filter by exact case, ignore case, or force upper/lower. Live log shows
-        near-miss progress. Private keys are never sent anywhere.
-      </div>
-      <div class="tc-link">→ vanity.html</div>
-    </a>
-  </div>
-
-  <div class="panel about" style="margin-top:1rem;">
-    <div class="panel-title">About</div>
-    <div class="row"><span class="k">runtime</span><span class="v">100% client-side — no server, no API calls, no telemetry</span></div>
-    <div class="row"><span class="k">miner tech</span><span class="v">WebGPU (WGSL keccak256 compute shader) + JS-SHA3 CPU workers</span></div>
-    <div class="row"><span class="k">vanity tech</span><span class="v">tweetnacl Ed25519 keypair generation in Web Workers</span></div>
-    <div class="row"><span class="k">contract</span><span class="v">HASH token · 0xAC7b5d06fa1e77D08aea40d46cB7C5923A87A0cc · Ethereum mainnet</span></div>
-    <div class="row"><span class="k">browser req.</span><span class="v">Chrome / Edge 113+ for WebGPU; any modern browser for vanity</span></div>
-  </div>
-
-</div>
 </body>
+
 </html>
