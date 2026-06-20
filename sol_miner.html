@@ -237,7 +237,7 @@ pub struct MiningState {
 }
 
 #[error_code]
-pub mod MinerError {
+pub enum MinerError {
     #[msg("The provided PoW proof is invalid.")]
     InvalidProof,
 }</code></pre>
