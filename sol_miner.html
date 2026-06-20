@@ -96,8 +96,9 @@
         <input id="in_pda" type="text" placeholder="PDAStateAccountAddress1111111111111" />
       </div>
     </div>
-    <div class="controls" style="margin-top:.8rem;">
+    <div class="controls" style="margin-top:.8rem; display: flex; gap: .5rem; flex-wrap: wrap;">
       <button id="btn_save_config">Save Configuration</button>
+      <button id="btn_init_contract" style="background: linear-gradient(135deg, #1abc9c, #16a085);">Initialize Contract State</button>
     </div>
   </div>
 
@@ -303,20 +304,25 @@ function mineLocal(challenge, minerPubkey, difficulty) {
     <div class="guide-tab-content" id="tab_steps">
       <div class="guide-steps" style="margin: 0;">
         <div class="guide-step">
-          <h3>1. Create the SPL Token</h3>
-          Generate a standard SPL token mint (via Solana CLI or SPL-Token UI). Retain no Mint Authority; instead, transfer Mint Authority solely to your smart contract's PDA (Program Derived Address) for <code>mining_state</code>.
+          <h3>1. Create the SPL Token (Done!)</h3>
+          You already created your token! Address: <code>DrHQY5YSqgeDPjgqNQh6pa5y42r6SFPBGNRhvcvtmkex</code>.
         </div>
         <div class="guide-step">
-          <h3>2. Deploy the Smart Contract</h3>
-          Compile and deploy the provided Anchor Rust program on Solana (Devnet or Mainnet). Call the <code>initialize</code> instruction with the token mint address created in Step 1.
+          <h3>2. Deploy the Program (Rust / Anchor)</h3>
+          Go to <a href="https://play.solana.com" target="_blank" style="color:#00ffcc;">Solana Playground</a>, create a new Anchor project, paste the <strong>Anchor Program (Rust)</strong> code, replace the Program ID and Mint Address in the code, build and deploy to Devnet.
         </div>
         <div class="guide-step">
-          <h3>3. Distribute the Client</h3>
-          Host your WebGPU miner (like this page) or distribute a command-line tool (CLI) written in Rust/NodeJS. Users connect Phantom, mine locally, and submit transactions paying micro-gas fees in SOL.
+          <h3>3. Initialize the Contract State</h3>
+          Enter your deployed Program ID and Mint Address in the configuration above. The PDA address derives automatically. Click <strong>Initialize Contract State</strong> to initialize the challenge on-chain.
         </div>
         <div class="guide-step">
-          <h3>💡 Advantage of PoW Memecoin</h3>
-          It is the fairest distribution mechanism (fair-launch): no capital required upfront, no presale, and no snipe bots. Only computer or graphics card hash power determines token allocation!
+          <h3>4. Transfer Mint Authority to Contract PDA</h3>
+          Run this command in your local terminal to transfer the token's Mint Authority to the smart contract's PDA address:
+          <pre style="background:#111; padding:.5rem; border-radius:4px; font-family:monospace; margin-top:.4rem; font-size:.78rem; overflow-x:auto;">spl-token authorize DrHQY5YSqgeDPjgqNQh6pa5y42r6SFPBGNRhvcvtmkex mint &lt;YOUR_PDA_ADDRESS&gt; --url https://api.devnet.solana.com</pre>
+        </div>
+        <div class="guide-step">
+          <h3>5. Mine Your Memecoin</h3>
+          Click "connect Phantom", verify that your balance and stats load, and click "Start" to mine your coin using WebGPU/CPU!
         </div>
       </div>
     </div>

@@ -7,9 +7,9 @@ const setStatus = (msg, cls="") => { const el=$("status"); el.textContent=msg; e
 // ── Default config ─────────────────────────────────────────────────────
 const DEFAULT_CONFIG = {
   rpc: "https://api.devnet.solana.com",
-  programId: "4powMintContractAddress11111111111111111",
-  mint: "MintAddressPlaceholder1111111111111111",
-  pda: "StatePDAPlaceholder111111111111111111"
+  programId: "11111111111111111111111111111111",
+  mint: "11111111111111111111111111111111",
+  pda: "11111111111111111111111111111111"
 };
 
 let config = { ...DEFAULT_CONFIG };
@@ -40,6 +40,120 @@ function saveConfig() {
     setStatus("Configuration saved!");
   } catch (e) {
     setStatus("Error saving configuration", "err");
+  }
+}
+
+function validateConfigKeys() {
+  const { PublicKey } = window.solanaWeb3;
+  try {
+    new PublicKey(config.programId);
+  } catch (e) {
+    throw new Error("Invalid Program ID: must be a valid Solana public key (base58).");
+  }
+  try {
+    new PublicKey(config.mint);
+  } catch (e) {
+    throw new Error("Invalid Mint Address: must be a valid Solana public key (base58).");
+  }
+  try {
+    new PublicKey(config.pda);
+  } catch (e) {
+    throw new Error("Invalid PDA Address: must be a valid Solana public key (base58).");
+  }
+}
+
+function updateDerivedPda() {
+  try {
+    const { PublicKey } = window.solanaWeb3;
+    const progId = new PublicKey($("in_prog").value.trim());
+    const [pda] = PublicKey.findProgramAddressSync(
+      [new TextEncoder().encode("mining_state")],
+      progId
+    );
+    $("in_pda").value = pda.toString();
+  } catch {}
+}
+
+async function initializeContractState() {
+  if (testMode) {
+    setStatus("Cannot initialize contract state in TEST mode.", "err");
+    return;
+  }
+  setStatus("Initializing contract state...");
+  try {
+    readKnobs();
+    const { PublicKey, Transaction, TransactionInstruction } = window.solanaWeb3;
+    let progId, mintPub;
+    try {
+      progId = new PublicKey($("in_prog").value.trim());
+    } catch {
+      throw new Error("Invalid Program ID: must be a valid Solana public key (base58).");
+    }
+    try {
+      mintPub = new PublicKey($("in_mint").value.trim());
+    } catch {
+      throw new Error("Invalid Mint Address: must be a valid Solana public key (base58).");
+    }
+
+    if (!connection) {
+      connection = new window.solanaWeb3.Connection($("in_rpc").value.trim(), "confirmed");
+    }
+
+    if (!walletAddr) {
+      await connectWallet();
+    }
+    const adminPub = new PublicKey(walletAddr);
+
+    // Derive PDA
+    const [pdaPubkey] = PublicKey.findProgramAddressSync(
+      [new TextEncoder().encode("mining_state")],
+      progId
+    );
+
+    // Update UI and config
+    $("in_pda").value = pdaPubkey.toString();
+    config.pda = pdaPubkey.toString();
+    config.programId = progId.toString();
+    config.mint = mintPub.toString();
+    saveConfig();
+
+    // Borsh: 8 bytes discriminator for global:initialize + 4 bytes difficulty (u32 LE)
+    // Sha256 of "global:initialize" -> 118652a2cfa8a9f5
+    const data = new Uint8Array(12);
+    data.set([0x11, 0x86, 0x52, 0xa2, 0xcf, 0xa8, 0xa9, 0xf5], 0);
+    const initialDifficulty = 3; // default
+    data[8] = initialDifficulty & 0xff;
+    data[9] = (initialDifficulty >> 8) & 0xff;
+    data[10] = (initialDifficulty >> 16) & 0xff;
+    data[11] = (initialDifficulty >> 24) & 0xff;
+
+    const SYSTEM_PROGRAM_ID = new PublicKey("11111111111111111111111111111111");
+
+    const instruction = new TransactionInstruction({
+      keys: [
+        { pubkey: pdaPubkey, isSigner: false, isWritable: true },
+        { pubkey: mintPub, isSigner: false, isWritable: false },
+        { pubkey: adminPub, isSigner: true, isWritable: true },
+        { pubkey: SYSTEM_PROGRAM_ID, isSigner: false, isWritable: false },
+      ],
+      programId: progId,
+      data: data,
+    });
+
+    const blockhashInfo = await connection.getLatestBlockhash();
+    const tx = new Transaction().add(instruction);
+    tx.recentBlockhash = blockhashInfo.blockhash;
+    tx.feePayer = adminPub;
+
+    setStatus("Signature required to initialize contract...");
+    const { signature } = await window.solana.signAndSendTransaction(tx);
+    setStatus("Transaction sent. Confirming...");
+    await connection.confirmTransaction(signature, "confirmed");
+    setStatus("✓ Contract state successfully initialized!");
+    await refreshChainState();
+  } catch (e) {
+    console.error(e);
+    setStatus("Initialization error: " + (e.message || String(e)), "err");
   }
 }
 
@@ -402,6 +516,7 @@ async function refreshChainState() {
   } catch (e) {
     console.error(e);
     setStatus("Contract error: " + e.message, "err");
+    challengeBytes = null;
   }
 }
 
@@ -418,6 +533,7 @@ function setupSyntheticState() {
 
 // ── Mining loop ────────────────────────────────────────────────────────
 function writeUniform(nonceBase) {
+  if (!challengeBytes) return;
   const u32 = new Uint32Array(20);
   
   // write challenge
@@ -743,6 +859,10 @@ function stopUiTick() {
 }
 
 async function startEngines() {
+  if (!testMode && !challengeBytes) {
+    setStatus("Error: Challenge bytes not loaded.", "err");
+    return;
+  }
   if (mode === "gpu" || mode === "both") {
     if (!device) {
       setStatus("Initializing GPU...");
@@ -755,7 +875,9 @@ async function startEngines() {
       if (!testMode) await refreshChainState();
       else setupSyntheticState();
     }
-    startCpuWorkers();
+    if (challengeBytes) {
+      startCpuWorkers();
+    }
   }
   startUiTick();
 }
@@ -798,8 +920,12 @@ async function startSession() {
   try {
     readKnobs();
     testMode = false;
+    validateConfigKeys();
     await connectWallet();
     await refreshChainState();
+    if (!challengeBytes) {
+      throw new Error("Could not retrieve challenge bytes. Verify that the PDA Address is initialized on-chain.");
+    }
     if (!device && (mode === "gpu" || mode === "both")) {
       setStatus("Initializing GPU...");
       await initGPU();
@@ -819,6 +945,8 @@ async function startSession() {
 $("btn_connect").onclick = () => startSession();
 $("btn_test").onclick    = () => startTestMode();
 $("btn_save_config").onclick = () => saveConfig();
+$("btn_init_contract").onclick = () => initializeContractState();
+$("in_prog").oninput = () => updateDerivedPda();
 
 $("btn_stop").onclick = () => {
   stopEngines();
@@ -900,6 +1028,7 @@ $("btn_consent").onclick = () => {
 
 (async function boot() {
   loadConfig();
+  try { updateDerivedPda(); } catch {}
   $("s_cpu").textContent = (navigator.hardwareConcurrency || "?") + " logical threads";
   await detectGPU();
   const tune = { wg: 8192, pp: 4 };
