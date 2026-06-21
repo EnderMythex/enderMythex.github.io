@@ -1,150 +1,161 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8" />
-<title>Solana PoW Miner — WebGPU</title>
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<link rel="stylesheet" href="css/global.css" />
-<link rel="stylesheet" href="css/sol_miner.css" />
+  <meta charset="utf-8" />
+  <title>Solana PoW Miner — WebGPU</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/sol_miner.css" />
 </head>
+
 <body>
-<nav id="nav">
-  <span class="brand">$HASH</span>
-  <a href="index.html">home</a>
-  <a href="eth_miner.html">eth miner</a>
-  <a href="sol_miner.html" class="active">sol miner</a>
-  <a href="vanity.html">vanity solana</a>
-</nav>
+  <nav id="nav">
+    <span class="brand">$Ender</span>
+    <a href="index.html">home</a>
+    <a href="eth_miner.html">eth miner</a>
+    <a href="sol_miner.html" class="active">sol miner</a>
+    <a href="vanity.html">vanity solana</a>
+  </nav>
 
-<div id="wrap">
-  <!-- Stats Panel -->
-  <div class="panel">
-    <div class="panel-title">Solana Mining Stats</div>
-    <div id="stats">
-      <div class="row"><span class="k">status</span><span class="v" id="s_status">Ready...</span></div>
-      <div class="row"><span class="k">gpu</span><span class="v" id="s_gpu">—</span></div>
-      <div class="row"><span class="k">cpu cores</span><span class="v" id="s_cpu">—</span></div>
-      <div class="row"><span class="k">wallet</span><span class="v" id="s_wallet">—</span></div>
-      <div class="row"><span class="k">challenge</span><span class="v" id="s_chal">—</span></div>
-      <div class="row"><span class="k">difficulty</span><span class="v" id="s_diff">—</span></div>
-      <div class="row"><span class="k">balance</span><span class="v" id="s_bal">—</span></div>
-      <div class="row"><span class="k">hashrate gpu</span><span class="v" id="s_hr_gpu">—</span></div>
-      <div class="row"><span class="k">hashrate cpu</span><span class="v" id="s_hr_cpu">—</span></div>
-      <div class="row"><span class="k">hashrate total</span><span class="v" id="s_hr">—</span></div>
-      <div class="row"><span class="k">hashes tried</span><span class="v" id="s_total">0</span></div>
-      <div class="row"><span class="k">solutions found</span><span class="v" id="s_found">0</span></div>
-      <div class="row"><span class="k">last tx</span><span class="v" id="s_tx">—</span></div>
-    </div>
-    <div id="status"></div>
-  </div>
-
-  <!-- Controls Panel -->
-  <div class="panel">
-    <div class="panel-title">Controls</div>
-    <div class="controls">
-      <span class="ctl">mode
-        <select id="sel_mode">
-          <option value="gpu" selected>GPU only</option>
-          <option value="cpu">CPU only</option>
-          <option value="both">GPU + CPU</option>
-        </select>
-      </span>
-      <button id="btn_connect" disabled>connect Phantom</button>
-      <button id="btn_test"    disabled title="Benchmark without a wallet, no transaction is ever sent">TEST (benchmark)</button>
-      <button id="btn_stop"    disabled>⏹ stop</button>
-      <button id="btn_start"   disabled style="display:none;">▶ resume</button>
-    </div>
-    <div class="controls" style="margin-top:.6rem;">
-      <span class="ctl">test difficulty
-        <input id="in_bits" type="number" min="1" max="8" step="1" value="3"
-               title="Number of leading zero bytes required in the hash (ex: 3 = 24 zero bits)">
-      </span>
-      <span class="ctl">workgroups
-        <input id="in_wg" type="number" min="64" max="65535" step="64" value="8192">
-      </span>
-      <span class="ctl">pipeline
-        <input id="in_pipe" type="number" min="1" max="16" step="1" value="4">
-      </span>
-      <span class="ctl">cpu threads
-        <input id="in_threads" type="number" min="1" max="64" step="1" value="0"
-               title="0 = auto (navigator.hardwareConcurrency)">
-      </span>
-    </div>
-  </div>
-
-  <!-- Configuration Panel -->
-  <div class="panel">
-    <div class="panel-title">Solana Token Configuration</div>
-    <div class="guide-intro" style="font-size:.78rem; color:#888; margin-bottom:.5rem;">
-      Enter the addresses of your token and Solana PoW smart contract. Settings are saved locally in your browser.
-    </div>
-    <div class="config-grid">
-      <div class="config-item">
-        <label>Solana RPC URL</label>
-        <input id="in_rpc" type="text" placeholder="https://api.devnet.solana.com" />
+  <div id="wrap">
+    <!-- Stats Panel -->
+    <div class="panel">
+      <div class="panel-title">Solana Mining Stats</div>
+      <div id="stats">
+        <div class="row"><span class="k">status</span><span class="v" id="s_status">Ready...</span></div>
+        <div class="row"><span class="k">gpu</span><span class="v" id="s_gpu">—</span></div>
+        <div class="row"><span class="k">cpu cores</span><span class="v" id="s_cpu">—</span></div>
+        <div class="row"><span class="k">wallet</span><span class="v" id="s_wallet">—</span></div>
+        <div class="row"><span class="k">challenge</span><span class="v" id="s_chal">—</span></div>
+        <div class="row"><span class="k">difficulty</span><span class="v" id="s_diff">—</span></div>
+        <div class="row"><span class="k">balance</span><span class="v" id="s_bal">—</span></div>
+        <div class="row"><span class="k">hashrate gpu</span><span class="v" id="s_hr_gpu">—</span></div>
+        <div class="row"><span class="k">hashrate cpu</span><span class="v" id="s_hr_cpu">—</span></div>
+        <div class="row"><span class="k">hashrate total</span><span class="v" id="s_hr">—</span></div>
+        <div class="row"><span class="k">hashes tried</span><span class="v" id="s_total">0</span></div>
+        <div class="row"><span class="k">solutions found</span><span class="v" id="s_found">0</span></div>
+        <div class="row"><span class="k">last tx</span><span class="v" id="s_tx">—</span></div>
       </div>
-      <div class="config-item">
-        <label>Program ID (PoW Smart Contract)</label>
-        <input id="in_prog" type="text" placeholder="YourProgramID111111111111111111111111111" />
-      </div>
-      <div class="config-item">
-        <label>Mint Address (SPL Memecoin)</label>
-        <input id="in_mint" type="text" placeholder="JetonMintAddress111111111111111111" />
-      </div>
-      <div class="config-item">
-        <label>PDA Address (Mining State Account)</label>
-        <input id="in_pda" type="text" placeholder="PDAStateAccountAddress1111111111111" />
-      </div>
-    </div>
-    <div class="controls" style="margin-top:.8rem; display: flex; gap: .5rem; flex-wrap: wrap;">
-      <button id="btn_save_config">Save Configuration</button>
-      <button id="btn_init_contract" style="background: linear-gradient(135deg, #1abc9c, #16a085);">Initialize Contract State</button>
-    </div>
-  </div>
-
-  <!-- Button to toggle Guide -->
-  <button id="btn_toggle_guide" class="guide-toggle-btn">💡 How to create & mine your own Solana Memecoin (PoW)?</button>
-
-  <!-- Solana Guide Panel -->
-  <div class="panel guide-panel" id="solana_guide_panel">
-    <div class="panel-title">Guide: PoW Memecoin on Solana</div>
-    
-    <div class="guide-intro">
-      Unlike Ethereum or Bitcoin, <strong>Solana is a Proof-of-Stake (PoS) blockchain</strong>. There is no native "mining". However, you can distribute your own memecoin fairly using <strong>application-level Proof-of-Work (PoW)</strong> (similar to the ORE project on Solana).
-      <br><br>
-      Here is how to design, deploy, and mine your own Solana PoW memecoin.
+      <div id="status"></div>
     </div>
 
-    <div class="guide-alert">
-      <strong>ℹ️ The Concept:</strong> You deploy a Solana program (smart contract) that holds the Mint Authority of your token. Users send it a transaction containing a proof of computation (a valid <code>nonce</code>) to receive tokens in reward.
-    </div>
-
-    <div class="guide-steps">
-      <div class="guide-step">
-        <h3>Step 1: The Smart Contract (Rust / Anchor)</h3>
-        This program stores a <code>challenge</code> (updated after each successful mine) and a <code>difficulty</code>. It exposes a <code>mine</code> instruction that validates the hash equation.
+    <!-- Controls Panel -->
+    <div class="panel">
+      <div class="panel-title">Controls</div>
+      <div class="controls">
+        <span class="ctl">mode
+          <select id="sel_mode">
+            <option value="gpu" selected>GPU only</option>
+            <option value="cpu">CPU only</option>
+            <option value="both">GPU + CPU</option>
+          </select>
+        </span>
+        <button id="btn_connect" disabled>connect Phantom</button>
+        <button id="btn_test" disabled title="Benchmark without a wallet, no transaction is ever sent">TEST
+          (benchmark)</button>
+        <button id="btn_stop" disabled>⏹ stop</button>
+        <button id="btn_start" disabled style="display:none;">▶ resume</button>
       </div>
-      
-      <div class="guide-step">
-        <h3>Step 2: The Miner Client (JavaScript / WebGPU)</h3>
-        Your web application (or CLI) queries the program's state account to fetch the current <code>challenge</code>, computes the hash in a loop by varying the <code>nonce</code>, and submits the transaction to Solana.
+      <div class="controls" style="margin-top:.6rem;">
+        <span class="ctl">test difficulty
+          <input id="in_bits" type="number" min="1" max="8" step="1" value="3"
+            title="Number of leading zero bytes required in the hash (ex: 3 = 24 zero bits)">
+        </span>
+        <span class="ctl">workgroups
+          <input id="in_wg" type="number" min="64" max="65535" step="64" value="8192">
+        </span>
+        <span class="ctl">pipeline
+          <input id="in_pipe" type="number" min="1" max="16" step="1" value="4">
+        </span>
+        <span class="ctl">cpu threads
+          <input id="in_threads" type="number" min="1" max="64" step="1" value="0"
+            title="0 = auto (navigator.hardwareConcurrency)">
+        </span>
       </div>
     </div>
 
-    <!-- Code Block Tabs -->
-    <div class="guide-tabs">
-      <button class="guide-tab-btn active" onclick="switchGuideTab('tab_anchor')">Anchor Program (Rust)</button>
-      <button class="guide-tab-btn" onclick="switchGuideTab('tab_client')">Miner Client (JS)</button>
-      <button class="guide-tab-btn" onclick="switchGuideTab('tab_steps')">Deployment Steps</button>
+    <!-- Configuration Panel -->
+    <div class="panel">
+      <div class="panel-title">Solana Token Configuration</div>
+      <div class="guide-intro" style="font-size:.78rem; color:#888; margin-bottom:.5rem;">
+        Enter the addresses of your token and Solana PoW smart contract. Settings are saved locally in your browser.
+      </div>
+      <div class="config-grid">
+        <div class="config-item">
+          <label>Solana RPC URL</label>
+          <input id="in_rpc" type="text" placeholder="https://api.devnet.solana.com" />
+        </div>
+        <div class="config-item">
+          <label>Program ID (PoW Smart Contract)</label>
+          <input id="in_prog" type="text" placeholder="YourProgramID111111111111111111111111111" />
+        </div>
+        <div class="config-item">
+          <label>Mint Address (SPL Memecoin)</label>
+          <input id="in_mint" type="text" placeholder="JetonMintAddress111111111111111111" />
+        </div>
+        <div class="config-item">
+          <label>PDA Address (Mining State Account)</label>
+          <input id="in_pda" type="text" placeholder="PDAStateAccountAddress1111111111111" />
+        </div>
+      </div>
+      <div class="controls" style="margin-top:.8rem; display: flex; gap: .5rem; flex-wrap: wrap;">
+        <button id="btn_save_config">Save Configuration</button>
+        <button id="btn_init_contract" style="background: linear-gradient(135deg, #1abc9c, #16a085);">Initialize
+          Contract State</button>
+      </div>
     </div>
 
-    <!-- Tab: Anchor Program -->
-    <div class="guide-tab-content active" id="tab_anchor">
-      <div class="guide-code-header">
-        <span>src/lib.rs (Anchor)</span>
-        <span>Rust</span>
+    <!-- Button to toggle Guide -->
+    <button id="btn_toggle_guide" class="guide-toggle-btn">💡 How to create & mine your own Solana Memecoin
+      (PoW)?</button>
+
+    <!-- Solana Guide Panel -->
+    <div class="panel guide-panel" id="solana_guide_panel">
+      <div class="panel-title">Guide: PoW Memecoin on Solana</div>
+
+      <div class="guide-intro">
+        Unlike Ethereum or Bitcoin, <strong>Solana is a Proof-of-Stake (PoS) blockchain</strong>. There is no native
+        "mining". However, you can distribute your own memecoin fairly using <strong>application-level Proof-of-Work
+          (PoW)</strong> (similar to the ORE project on Solana).
+        <br><br>
+        Here is how to design, deploy, and mine your own Solana PoW memecoin.
       </div>
-      <pre><code>use anchor_lang::prelude::*;
+
+      <div class="guide-alert">
+        <strong>ℹ️ The Concept:</strong> You deploy a Solana program (smart contract) that holds the Mint Authority of
+        your token. Users send it a transaction containing a proof of computation (a valid <code>nonce</code>) to
+        receive tokens in reward.
+      </div>
+
+      <div class="guide-steps">
+        <div class="guide-step">
+          <h3>Step 1: The Smart Contract (Rust / Anchor)</h3>
+          This program stores a <code>challenge</code> (updated after each successful mine) and a
+          <code>difficulty</code>. It exposes a <code>mine</code> instruction that validates the hash equation.
+        </div>
+
+        <div class="guide-step">
+          <h3>Step 2: The Miner Client (JavaScript / WebGPU)</h3>
+          Your web application (or CLI) queries the program's state account to fetch the current <code>challenge</code>,
+          computes the hash in a loop by varying the <code>nonce</code>, and submits the transaction to Solana.
+        </div>
+      </div>
+
+      <!-- Code Block Tabs -->
+      <div class="guide-tabs">
+        <button class="guide-tab-btn active" onclick="switchGuideTab('tab_anchor')">Anchor Program (Rust)</button>
+        <button class="guide-tab-btn" onclick="switchGuideTab('tab_client')">Miner Client (JS)</button>
+        <button class="guide-tab-btn" onclick="switchGuideTab('tab_steps')">Deployment Steps</button>
+      </div>
+
+      <!-- Tab: Anchor Program -->
+      <div class="guide-tab-content active" id="tab_anchor">
+        <div class="guide-code-header">
+          <span>src/lib.rs (Anchor)</span>
+          <span>Rust</span>
+        </div>
+        <pre><code>use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount};
 use solana_program::keccak;
 
@@ -241,15 +252,15 @@ pub enum MinerError {
     #[msg("The provided PoW proof is invalid.")]
     InvalidProof,
 }</code></pre>
-    </div>
-
-    <!-- Tab: Miner Client -->
-    <div class="guide-tab-content" id="tab_client">
-      <div class="guide-code-header">
-        <span>miner_client.js</span>
-        <span>JavaScript</span>
       </div>
-      <pre><code>import { Connection, PublicKey, Keypair, Transaction } from '@solana/web3.js';
+
+      <!-- Tab: Miner Client -->
+      <div class="guide-tab-content" id="tab_client">
+        <div class="guide-code-header">
+          <span>miner_client.js</span>
+          <span>JavaScript</span>
+        </div>
+        <pre><code>import { Connection, PublicKey, Keypair, Transaction } from '@solana/web3.js';
 import * as anchor from '@coral-xyz/anchor';
 import { keccak_256 } from 'js-sha3';
 
@@ -298,45 +309,53 @@ function mineLocal(challenge, minerPubkey, difficulty) {
         nonce++;
     }
 }</code></pre>
-    </div>
+      </div>
 
-    <!-- Tab: Steps -->
-    <div class="guide-tab-content" id="tab_steps">
-      <div class="guide-steps" style="margin: 0;">
-        <div class="guide-step">
-          <h3>1. Create the SPL Token (Done!)</h3>
-          You already created your token! Address: <code>DrHQY5YSqgeDPjgqNQh6pa5y42r6SFPBGNRhvcvtmkex</code>.
-        </div>
-        <div class="guide-step">
-          <h3>2. Deploy the Program (Rust / Anchor)</h3>
-          Go to <a href="https://play.solana.com" target="_blank" style="color:#00ffcc;">Solana Playground</a>, create a new Anchor project, paste the <strong>Anchor Program (Rust)</strong> code, replace the Program ID and Mint Address in the code, build and deploy to Devnet.
-        </div>
-        <div class="guide-step">
-          <h3>3. Initialize the Contract State</h3>
-          Enter your deployed Program ID and Mint Address in the configuration above. The PDA address derives automatically. Click <strong>Initialize Contract State</strong> to initialize the challenge on-chain.
-        </div>
-        <div class="guide-step">
-          <h3>4. Transfer Mint Authority to Contract PDA</h3>
-          Run this command in your local terminal to transfer the token's Mint Authority to the smart contract's PDA address:
-          <pre style="background:#111; padding:.5rem; border-radius:4px; font-family:monospace; margin-top:.4rem; font-size:.78rem; overflow-x:auto;">spl-token authorize DrHQY5YSqgeDPjgqNQh6pa5y42r6SFPBGNRhvcvtmkex mint &lt;YOUR_PDA_ADDRESS&gt; --url https://api.devnet.solana.com</pre>
-        </div>
-        <div class="guide-step">
-          <h3>5. Mine Your Memecoin</h3>
-          Click "connect Phantom", verify that your balance and stats load, and click "Start" to mine your coin using WebGPU/CPU!
+      <!-- Tab: Steps -->
+      <div class="guide-tab-content" id="tab_steps">
+        <div class="guide-steps" style="margin: 0;">
+          <div class="guide-step">
+            <h3>1. Create the SPL Token (Done!)</h3>
+            You already created your token! Address: <code>DrHQY5YSqgeDPjgqNQh6pa5y42r6SFPBGNRhvcvtmkex</code>.
+          </div>
+          <div class="guide-step">
+            <h3>2. Deploy the Program (Rust / Anchor)</h3>
+            Go to <a href="https://play.solana.com" target="_blank" style="color:#00ffcc;">Solana Playground</a>, create
+            a new Anchor project, paste the <strong>Anchor Program (Rust)</strong> code, replace the Program ID and Mint
+            Address in the code, build and deploy to Devnet.
+          </div>
+          <div class="guide-step">
+            <h3>3. Initialize the Contract State</h3>
+            Enter your deployed Program ID and Mint Address in the configuration above. The PDA address derives
+            automatically. Click <strong>Initialize Contract State</strong> to initialize the challenge on-chain.
+          </div>
+          <div class="guide-step">
+            <h3>4. Transfer Mint Authority to Contract PDA</h3>
+            Run this command in your local terminal to transfer the token's Mint Authority to the smart contract's PDA
+            address:
+            <pre
+              style="background:#111; padding:.5rem; border-radius:4px; font-family:monospace; margin-top:.4rem; font-size:.78rem; overflow-x:auto;">spl-token authorize DrHQY5YSqgeDPjgqNQh6pa5y42r6SFPBGNRhvcvtmkex mint &lt;YOUR_PDA_ADDRESS&gt; --url https://api.devnet.solana.com</pre>
+          </div>
+          <div class="guide-step">
+            <h3>5. Mine Your Memecoin</h3>
+            Click "connect Phantom", verify that your balance and stats load, and click "Start" to mine your coin using
+            WebGPU/CPU!
+          </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-<div id="banner">
-  <span class="text">
-    This miner uses your <b>graphics card</b> and <b>processor</b> to mine your custom Solana PoW memecoin. Connect your Phantom Wallet and edit the configuration addresses above to link it to your token.
-  </span>
-  <button id="btn_consent">I agree</button>
-</div>
+  <div id="banner">
+    <span class="text">
+      This miner uses your <b>graphics card</b> and <b>processor</b> to mine your custom Solana PoW memecoin. Connect
+      your Phantom Wallet and edit the configuration addresses above to link it to your token.
+    </span>
+    <button id="btn_consent">I agree</button>
+  </div>
 
-<script src="https://unpkg.com/@solana/web3.js@1.95.8/lib/index.iife.min.js"></script>
-<script src="js/sol_miner.js"></script>
+  <script src="https://unpkg.com/@solana/web3.js@1.95.8/lib/index.iife.min.js"></script>
+  <script src="js/sol_miner.js"></script>
 </body>
+
 </html>

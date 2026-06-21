@@ -1,125 +1,130 @@
 <!doctype html>
 <html lang="en">
+
 <head>
-<meta charset="utf-8" />
-<title>Solana vanity address — browser generator</title>
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<link rel="stylesheet" href="css/global.css" />
-<link rel="stylesheet" href="css/vanity.css" />
+  <meta charset="utf-8" />
+  <title>Solana vanity address — browser generator</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/vanity.css" />
 </head>
+
 <body>
-<nav id="nav">
-  <span class="brand">$HASH</span>
-  <a href="index.html">home</a>
-  <a href="eth_miner.html">eth miner</a>
-  <a href="sol_miner.html">sol miner</a>
-  <a href="vanity.html" class="active">vanity solana</a>
-</nav>
+  <nav id="nav">
+    <span class="brand">$Ender</span>
+    <a href="index.html">home</a>
+    <a href="eth_miner.html">eth miner</a>
+    <a href="sol_miner.html">sol miner</a>
+    <a href="vanity.html" class="active">vanity solana</a>
+  </nav>
 
-<div id="wrap">
+  <div id="wrap">
 
-  <!-- Stats panel -->
-  <div class="panel">
-    <div class="panel-title">Generator stats</div>
-    <div id="stats">
-      <div class="row"><span class="k">status</span><span class="v" id="s_status">init…</span></div>
-      <div class="row"><span class="k">gpu</span><span class="v" id="s_gpu">—</span></div>
-      <div class="row"><span class="k">cpu cores</span><span class="v" id="s_cpu">—</span></div>
-      <div class="row"><span class="k">tries</span><span class="v" id="s_tries">0</span></div>
-      <div class="row"><span class="k">tries/sec</span><span class="v" id="s_rate">—</span></div>
-      <div class="row"><span class="k">expected tries</span><span class="v" id="s_expect">—</span></div>
-      <div class="row"><span class="k">expected time</span><span class="v" id="s_etime">—</span></div>
-      <div class="row"><span class="k">found</span><span class="v" id="s_found">0</span></div>
+    <!-- Stats panel -->
+    <div class="panel">
+      <div class="panel-title">Generator stats</div>
+      <div id="stats">
+        <div class="row"><span class="k">status</span><span class="v" id="s_status">init…</span></div>
+        <div class="row"><span class="k">gpu</span><span class="v" id="s_gpu">—</span></div>
+        <div class="row"><span class="k">cpu cores</span><span class="v" id="s_cpu">—</span></div>
+        <div class="row"><span class="k">tries</span><span class="v" id="s_tries">0</span></div>
+        <div class="row"><span class="k">tries/sec</span><span class="v" id="s_rate">—</span></div>
+        <div class="row"><span class="k">expected tries</span><span class="v" id="s_expect">—</span></div>
+        <div class="row"><span class="k">expected time</span><span class="v" id="s_etime">—</span></div>
+        <div class="row"><span class="k">found</span><span class="v" id="s_found">0</span></div>
+      </div>
+      <div id="status"></div>
     </div>
-    <div id="status"></div>
-  </div>
 
-  <!-- Filters & controls panel -->
-  <div class="panel">
-    <div class="panel-title">Search filters</div>
-    <div class="controls">
-      <span class="ctl">mode
-        <select id="sel_mode">
-          <option value="cpu" selected>CPU only (recommended)</option>
-          <option value="gpu" disabled>GPU — unavailable (Ed25519 on GPU is a separate project)</option>
-        </select>
-      </span>
-      <span class="ctl">starts with
-        <input id="in_prefix" type="text" placeholder="e.g. SoL" autocomplete="off">
-      </span>
-      <span class="ctl">ends with
-        <input id="in_suffix" type="text" placeholder="e.g. PUMP" autocomplete="off">
-      </span>
+    <!-- Filters & controls panel -->
+    <div class="panel">
+      <div class="panel-title">Search filters</div>
+      <div class="controls">
+        <span class="ctl">mode
+          <select id="sel_mode">
+            <option value="cpu" selected>CPU only (recommended)</option>
+            <option value="gpu" disabled>GPU — unavailable (Ed25519 on GPU is a separate project)</option>
+          </select>
+        </span>
+        <span class="ctl">starts with
+          <input id="in_prefix" type="text" placeholder="e.g. SoL" autocomplete="off">
+        </span>
+        <span class="ctl">ends with
+          <input id="in_suffix" type="text" placeholder="e.g. PUMP" autocomplete="off">
+        </span>
+      </div>
+    <div style="color: #ff6666; font-size: 0.78rem; margin-top: 0.4rem; margin-bottom: 0.4rem; padding-left: 0.2rem;">
+      ⚠️ <b>Unsupported characters (not in Base58):</b> <code>0</code>, <code>O</code>, <code>I</code>, <code>l</code>
     </div>
     <div class="controls" style="margin-top:.5rem;">
-      <span class="ctl">case
-        <select id="sel_case">
-          <option value="exact" selected>exact</option>
-          <option value="ignore">ignore case</option>
-          <option value="upper">force UPPER</option>
-          <option value="lower">force lower</option>
-        </select>
-      </span>
-      <span class="ctl">cpu threads
-        <input id="in_threads" type="number" min="0" max="64" step="1" value="0"
-               title="0 = auto (cores - 1)">
-      </span>
-      <span class="ctl">stop after
-        <input id="in_stopafter" type="number" min="1" max="9999" step="1" value="1">
-      </span>
-      <button id="btn_start">▶ start</button>
-      <button id="btn_stop" disabled>⏹ stop</button>
-      <button id="btn_clear">clear results</button>
+        <span class="ctl">case
+          <select id="sel_case">
+            <option value="exact" selected>exact</option>
+            <option value="ignore">ignore case</option>
+            <option value="upper">force UPPER</option>
+            <option value="lower">force lower</option>
+          </select>
+        </span>
+        <span class="ctl">cpu threads
+          <input id="in_threads" type="number" min="0" max="64" step="1" value="0" title="0 = auto (cores - 1)">
+        </span>
+        <span class="ctl">stop after
+          <input id="in_stopafter" type="number" min="1" max="9999" step="1" value="1">
+        </span>
+        <button id="btn_start">▶ start</button>
+        <button id="btn_stop" disabled>⏹ stop</button>
+        <button id="btn_clear">clear results</button>
+      </div>
+      <div class="hint">
+        Base58 alphabet: <code>123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz</code>
+        — no <code>0 O I l</code>. Addresses almost always start with a letter.
+      </div>
     </div>
-    <div class="hint">
-      Base58 alphabet: <code>123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz</code>
-      — no <code>0 O I l</code>. Addresses almost always start with a letter.
+
+    <!-- Log panel -->
+    <div class="panel">
+      <div class="panel-title">Live search log</div>
+      <div class="controls">
+        <span class="ctl"><label><input type="checkbox" id="cb_log_near" checked> near-misses only</label></span>
+        <span class="ctl">sample 1 /
+          <input id="in_log_rate" type="number" min="1" max="100000" step="100" value="500">
+        </span>
+        <button id="btn_log_clear">clear log</button>
+      </div>
+      <div id="log"></div>
+    </div>
+
+    <!-- Results panel -->
+    <div class="panel">
+      <div class="panel-title">Found addresses</div>
+      <div class="hint" style="margin-bottom:.5rem;">
+        ⚠ Private keys shown in plain text. Everything is generated <b>locally in your browser</b> —
+        nothing is sent over the network. Save the key immediately.
+      </div>
+      <div id="results"></div>
+    </div>
+
+  </div>
+
+  <!-- QR modal -->
+  <div id="qr-overlay">
+    <div id="qr-box">
+      <div class="qr-label">Match found — save your key</div>
+      <div class="qr-addr" id="qr-addr"></div>
+      <div id="qr-canvas-wrap"></div>
+      <div class="qr-key-label">Private key (base58) — paste into Phantom → Import Private Key</div>
+      <div id="qr-key"></div>
+      <div class="qr-btns">
+        <button id="qr-copy">copy key</button>
+        <button id="qr-dl">download .json</button>
+        <button id="qr-close">close</button>
+      </div>
     </div>
   </div>
 
-  <!-- Log panel -->
-  <div class="panel">
-    <div class="panel-title">Live search log</div>
-    <div class="controls">
-      <span class="ctl"><label><input type="checkbox" id="cb_log_near" checked> near-misses only</label></span>
-      <span class="ctl">sample 1 /
-        <input id="in_log_rate" type="number" min="1" max="100000" step="100" value="500">
-      </span>
-      <button id="btn_log_clear">clear log</button>
-    </div>
-    <div id="log"></div>
-  </div>
-
-  <!-- Results panel -->
-  <div class="panel">
-    <div class="panel-title">Found addresses</div>
-    <div class="hint" style="margin-bottom:.5rem;">
-      ⚠ Private keys shown in plain text. Everything is generated <b>locally in your browser</b> —
-      nothing is sent over the network. Save the key immediately.
-    </div>
-    <div id="results"></div>
-  </div>
-
-</div>
-
-<!-- QR modal -->
-<div id="qr-overlay">
-  <div id="qr-box">
-    <div class="qr-label">Match found — save your key</div>
-    <div class="qr-addr" id="qr-addr"></div>
-    <div id="qr-canvas-wrap"></div>
-    <div class="qr-key-label">Private key (base58) — paste into Phantom → Import Private Key</div>
-    <div id="qr-key"></div>
-    <div class="qr-btns">
-      <button id="qr-copy">copy key</button>
-      <button id="qr-dl">download .json</button>
-      <button id="qr-close">close</button>
-    </div>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-<script src="js/vanity.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="js/vanity.js"></script>
 </body>
+
 </html>
