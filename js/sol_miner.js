@@ -118,9 +118,9 @@ async function initializeContractState() {
     saveConfig();
 
     // Borsh: 8 bytes discriminator for global:initialize + 4 bytes difficulty (u32 LE)
-    // Sha256 of "global:initialize" -> 118652a2cfa8a9f5
+    // Sha256 of "global:initialize" -> afaf6d1f0d989bed
     const data = new Uint8Array(12);
-    data.set([0x11, 0x86, 0x52, 0xa2, 0xcf, 0xa8, 0xa9, 0xf5], 0);
+    data.set([0xaf, 0xaf, 0x6d, 0x1f, 0x0d, 0x98, 0x9b, 0xed], 0);
     const initialDifficulty = 3; // default
     data[8] = initialDifficulty & 0xff;
     data[9] = (initialDifficulty >> 8) & 0xff;
@@ -600,8 +600,9 @@ async function submitMine(nonce) {
     );
 
     // Borsh serialization: 8 bytes discriminator + 8 bytes nonce LE
+    // Sha256 of "global:mine" -> 3b16b2d58bc5a0c4
     const data = new Uint8Array(16);
-    data.set([0x51, 0xc7, 0x69, 0x4f, 0x4a, 0x3e, 0x78, 0xa6], 0); // global:mine
+    data.set([0x3b, 0x16, 0xb2, 0xd5, 0x8b, 0xc5, 0xa0, 0xc4], 0); // global:mine
     let temp = nonce;
     for (let i = 0; i < 8; i++) {
       data[8 + i] = Number(temp & 255n);
