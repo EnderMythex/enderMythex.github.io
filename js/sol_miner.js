@@ -510,7 +510,6 @@ async function refreshChainState() {
     const chalHex = Array.from(challengeBytes, b => b.toString(16).padStart(2,"0")).join("");
     $("s_chal").textContent = shortHex("0x" + chalHex);
     $("s_diff").textContent = difficultyBytes + " zero byte(s) required (" + (difficultyBytes * 8) + " bits)";
-    $("s_epoch").textContent = "Active";
     $("s_bal").textContent = "SPL Token Connected";
     if (cpuRunning) retargetCpuWorkers();
   } catch (e) {
@@ -527,7 +526,6 @@ function setupSyntheticState() {
   const chalHex = Array.from(challengeBytes, b => b.toString(16).padStart(2,"0")).join("");
   $("s_chal").textContent = shortHex("0x" + chalHex);
   $("s_diff").textContent = difficultyBytes + " zero byte(s) required (TEST mode)";
-  $("s_epoch").textContent = "test";
   $("s_bal").textContent = "— (test mode)";
 }
 
