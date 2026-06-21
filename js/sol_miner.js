@@ -121,7 +121,7 @@ async function initializeContractState() {
     // Sha256 of "global:initialize" -> afaf6d1f0d989bed
     const data = new Uint8Array(12);
     data.set([0xaf, 0xaf, 0x6d, 0x1f, 0x0d, 0x98, 0x9b, 0xed], 0);
-    const initialDifficulty = 3; // default
+    const initialDifficulty = parseInt($("in_bits").value, 10) || 5; // Read difficulty from UI (default to 5)
     data[8] = initialDifficulty & 0xff;
     data[9] = (initialDifficulty >> 8) & 0xff;
     data[10] = (initialDifficulty >> 16) & 0xff;
