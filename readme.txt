@@ -14,10 +14,10 @@ BIP39 Passphrase (empty for none):
 
 Wrote new keypair to C:\Users\EnderMythex\.config\solana\id.json
 ===========================================================================
-pubkey: 2gZtWEaEnXpg7wUse1DoETQHphuNcXiLicoqGbekywuu
+pubkey: ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ===========================================================================
 Save this seed phrase and your BIP39 passphrase to recover your new keypair:
-unaware tell twelve tonight bean moon apple box bachelor two response cover
+░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░
 ===========================================================================
 
 C:\Users\EnderMythex\Documents\solana-release\bin>solana airdrop 2 2gZtWEaEnXpg7wUse1DoETQHphuNcXiLicoqGbekywuu --url
