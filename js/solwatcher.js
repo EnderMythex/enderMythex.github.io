@@ -138,9 +138,13 @@ async function enrich(mints) {
       if (!mint) continue;
       const liq = Number(p.liquidity?.usd) || 0;
       const prev = map.get(mint);
-      // prefer the pumpswap pair; otherwise the deepest-liquidity pair
+      // keep the deepest-liquidity pair (tie-break to the pumpswap pool) so a
+      // token whose pumpswap pool is drained still shows its real liquidity
       const isPump = p.dexId === "pumpswap";
-      if (prev && !(isPump && !prev.isPump) && liq <= prev.liq) continue;
+      if (prev) {
+        if (liq < prev.liq) continue;
+        if (liq === prev.liq && !(isPump && !prev.isPump)) continue;
+      }
       const priceUsd = Number(p.priceUsd) || 0;
       const priceNative = Number(p.priceNative) || 0;
       map.set(mint, {
@@ -166,25 +170,35 @@ async function enrich(mints) {
 
 // Merge GeckoTerminal discovery with DexScreener enrichment (DS wins).
 function mergeRecords(gt, ds) {
+  // A representative SOL price, so per-coin fee math still works when one
+  // provider is missing the quote price for a token.
+  let globalSol = 0;
+  for (const d of ds.values()) if (Number(d.solUsd) > 0) { globalSol = Number(d.solUsd); break; }
+  if (!globalSol) for (const g of gt.values()) if (Number(g.solUsd) > 0) { globalSol = Number(g.solUsd); break; }
+
   const out = [];
   for (const [mint, g] of gt) {
     const d = ds.get(mint) || {};
     const pick = (k, fb) => (d[k] !== undefined && d[k] !== null && d[k] !== "" && !(typeof d[k] === "number" && !isFinite(d[k])) ? d[k] : fb);
-    const vol24 = pick("vol24", g.vol24);
-    const solUsd = pick("solUsd", g.solUsd);
+    // liquidity/volume: take whichever source has the larger real number, so a
+    // 0/garbage value from one provider is covered by the other
+    const liq = Math.max(Number(d.liq) || 0, Number(g.liq) || 0);
+    const vol24 = Math.max(Number(d.vol24) || 0, Number(g.vol24) || 0);
+    const solUsd = Number(d.solUsd) > 0 ? Number(d.solUsd)
+      : Number(g.solUsd) > 0 ? Number(g.solUsd) : globalSol;
     out.push({
       mint,
       symbol: (pick("symbol", g.symbol) || "?").toString().slice(0, 14),
       name: (pick("name", g.name) || "").toString().slice(0, 40),
       image: pick("image", g.image),
       mcap: Number(pick("mcap", g.mcap)) || 0,
-      liq: Number(pick("liq", g.liq)) || 0,
+      liq,
       price: Number(pick("price", g.price)) || 0,
       m5: Number(pick("m5", g.m5)),
       h1: Number(pick("h1", g.h1)),
       h24: Number(pick("h24", g.h24)),
-      vol24: Number(vol24) || 0,
-      feesSol: solUsd > 0 ? (Number(vol24) || 0) * PUMPSWAP_FEE / solUsd : 0,
+      vol24,
+      feesSol: solUsd > 0 ? vol24 * PUMPSWAP_FEE / solUsd : 0,
       migratedIso: pick("migratedIso", g.migratedIso),
       pairAddress: pick("pairAddress", g.pairAddress),
     });
@@ -346,9 +360,11 @@ window.addEventListener("DOMContentLoaded", () => {
   try { $("in_key").value = localStorage.getItem(KEY_LS) || ""; } catch (e) {}
 
   $("btn_refresh").addEventListener("click", refresh);
-  // Filter/sort tweaks re-render from cached data — no extra API calls.
-  ["in_min", "in_liq", "in_fees", "sel_sort"].forEach((id) =>
-    $(id).addEventListener("change", () => { if (lastRecords) render(lastRecords); }));
+  // Filter tweaks re-render instantly from cached data — no extra API calls.
+  // Use "input" (fires as you type/spin) so the list updates immediately.
+  ["in_min", "in_liq", "in_fees"].forEach((id) =>
+    $(id).addEventListener("input", () => { if (lastRecords) render(lastRecords); }));
+  $("sel_sort").addEventListener("change", () => { if (lastRecords) render(lastRecords); });
   // Persist the key and refetch (with Birdeye) when it changes.
   $("in_key").addEventListener("change", () => {
     try { localStorage.setItem(KEY_LS, $("in_key").value.trim()); } catch (e) {}
