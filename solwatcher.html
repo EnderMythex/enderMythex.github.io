@@ -5,8 +5,8 @@
   <meta charset="utf-8" />
   <title>SolWatcher — pump.fun graduates over $1M</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="css/global.css?v=20260710" />
-  <link rel="stylesheet" href="css/solwatcher.css?v=20260710" />
+  <link rel="stylesheet" href="css/global.css?v=20260711" />
+  <link rel="stylesheet" href="css/solwatcher.css?v=20260711" />
 </head>
 
 <body>
@@ -76,16 +76,18 @@
 
     <div class="panel">
       <div class="hint">
-        Data from the free <a href="https://www.geckoterminal.com/" target="_blank" rel="noopener">GeckoTerminal</a>
-        public API (keyless, rate-limited ~30 req/min). "Graduated" = pump.fun tokens that filled their
-        bonding curve and migrated to the PumpSwap AMM. Market cap uses circulating market cap when available,
-        otherwise fully-diluted value (FDV). Not financial advice — DYOR before touching any of these.
+        Coins discovered via <a href="https://www.geckoterminal.com/" target="_blank" rel="noopener">GeckoTerminal</a>
+        and enriched with real market cap &amp; liquidity from
+        <a href="https://dexscreener.com/" target="_blank" rel="noopener">DexScreener</a> (both keyless, CORS,
+        rate-limited). "Graduated" = pump.fun tokens that filled their bonding curve and migrated to the PumpSwap AMM.
+        GMGN can't be used here — it blocks every browser request behind a Cloudflare challenge. Neither API exposes
+        cumulative fees, so "fees 24h" is <b>estimated</b> (24h volume × 0.25% ÷ SOL price). Not financial advice — DYOR.
       </div>
     </div>
 
   </div>
 
-  <script src="js/solwatcher.js?v=20260710"></script>
+  <script src="js/solwatcher.js?v=20260711"></script>
 </body>
 
 </html>
