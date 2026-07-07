@@ -7,8 +7,10 @@ const ASSOC_TOKEN_PROGRAM_STR = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
 const SYSTEM_PROGRAM_STR = "11111111111111111111111111111111";
 const LAMPORTS_PER_SOL = 1_000_000_000;
 
+// Browser-friendly public RPCs. api.mainnet-beta.solana.com returns 403 to
+// browser requests, so mainnet defaults to a keyless CORS-enabled endpoint.
 const RPCS = {
-  "mainnet-beta": "https://api.mainnet-beta.solana.com",
+  "mainnet-beta": "https://solana-rpc.publicnode.com",
   devnet: "https://api.devnet.solana.com",
 };
 
