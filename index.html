@@ -5,8 +5,8 @@
   <meta charset="utf-8" />
   <title>$HASH Tools</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="css/global.css?v=20260707" />
-  <link rel="stylesheet" href="css/index.css?v=20260707" />
+  <link rel="stylesheet" href="css/global.css?v=20260708" />
+  <link rel="stylesheet" href="css/index.css?v=20260708" />
 </head>
 
 <body>
@@ -28,15 +28,25 @@
   <div id="wrap">
 
     <div id="hero">
-      <h1>$Ender · BROWSER TOOLS</h1>
+      <div class="hero-badge">● 100% client-side · no server · no tracking</div>
+      <h1>The client-side<br><span class="grad">crypto toolkit</span></h1>
       <p>
-        A collection of browser-based crypto tools that run entirely on your machine —
-        no server, no backend, no data sent anywhere.
-        Uses WebGPU compute shaders and Web Workers to push your hardware to its limits.
+        Wrap SOL, grind vanity wallets and convert keys — every tool runs
+        <b>entirely in your browser</b>, on your machine. No backend, no API calls,
+        no accounts. Your private keys never leave the tab.
       </p>
+      <div class="hero-cta">
+        <a class="btn-primary" href="solwrapper.html">Open SOL Wrapper →</a>
+        <a class="btn-ghost" href="#tools">Browse the tools</a>
+      </div>
+      <div class="hero-stats">
+        <span><b>0</b> servers</span>
+        <span><b>0</b> data sent</span>
+        <span><b>∞</b> runs, all local</span>
+      </div>
     </div>
 
-    <div class="tools">
+    <div class="tools" id="tools">
       <a class="tool-card" href="vanity.html">
         <div class="tc-tag">Solana · CPU Workers</div>
         <div class="tc-name">Vanity Address</div>

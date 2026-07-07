@@ -9,8 +9,9 @@ body {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-/* Faint colored glows on a black base so frosted-glass blur has something to
-   diffuse. Stays visually "full black" but gives the UI depth. */
+/* Colored glows on a black base so the frosted-glass blur has something to
+   diffuse. A fixed full-viewport layer so the purple/blue never gets clipped
+   or "left behind" while scrolling — it stays painted across the whole page. */
 body::before {
   content: "";
   position: fixed;
@@ -18,24 +19,60 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(1000px 560px at 8% 2%, rgba(120, 130, 190, 0.22), transparent 55%),
-    radial-gradient(850px 520px at 104% 8%, rgba(70, 160, 170, 0.18), transparent 52%),
-    radial-gradient(950px 720px at 50% 116%, rgba(150, 90, 180, 0.16), transparent 58%);
+    radial-gradient(900px 540px at 4% -4%, rgba(132, 116, 226, 0.30), transparent 56%),
+    radial-gradient(820px 500px at 104% 8%, rgba(64, 172, 184, 0.20), transparent 52%),
+    radial-gradient(820px 560px at 92% 98%, rgba(168, 84, 214, 0.30), transparent 56%),
+    radial-gradient(1000px 680px at 22% 108%, rgba(126, 78, 214, 0.26), transparent 58%);
+}
+
+/* ── Custom scrollbar ────────────────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(150, 120, 210, 0.45) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(150, 120, 210, 0.55), rgba(80, 130, 190, 0.55));
+  border-radius: 999px;
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(175, 145, 235, 0.85), rgba(100, 155, 220, 0.85));
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* ── Nav ─────────────────────────────────────────────────────────────── */
 #nav {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: rgba(10, 10, 12, 0.55);
-  -webkit-backdrop-filter: blur(16px) saturate(130%);
-  backdrop-filter: blur(16px) saturate(130%);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding: .55rem 1rem;
+  top: .75rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(900px, calc(100% - 1.5rem));
+  box-sizing: border-box;
+  background: rgba(14, 14, 18, 0.6);
+  -webkit-backdrop-filter: blur(20px) saturate(150%);
+  backdrop-filter: blur(20px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 16px;
+  box-shadow: 0 10px 34px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  padding: .5rem .9rem;
   display: flex;
-  gap: 1.2rem;
+  gap: 1.1rem;
   align-items: center;
   font-size: .85rem;
   z-index: 50;
@@ -244,4 +281,41 @@ select option {
 .section-label small {
   color: #666;
   font-size: .72rem;
+}
+
+/* ── Mobile: single compact scrollable row; expand the dropdown inline ── */
+@media (max-width: 560px) {
+  #nav {
+    top: .5rem;
+    width: calc(100% - 1rem);
+    gap: .9rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  #nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  #nav a {
+    white-space: nowrap;
+  }
+
+  /* Hover dropdowns don't work on touch — flow eth/sol miner inline instead. */
+  .nav-dd,
+  .nav-dd-menu {
+    display: contents;
+  }
+
+  .nav-dd-toggle {
+    display: none;
+  }
+
+  .nav-dd-menu a {
+    padding: .2rem .4rem;
+    border-radius: 0;
+    background: none;
+  }
 }
