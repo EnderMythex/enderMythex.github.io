@@ -5,8 +5,8 @@
   <meta charset="utf-8" />
   <title>SolWatcher — pump.fun graduates over $1M</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="css/global.css?v=20260709" />
-  <link rel="stylesheet" href="css/solwatcher.css?v=20260709" />
+  <link rel="stylesheet" href="css/global.css?v=20260710" />
+  <link rel="stylesheet" href="css/solwatcher.css?v=20260710" />
 </head>
 
 <body>
@@ -40,10 +40,18 @@
         <span class="ctl">min market cap $
           <input id="in_min" type="number" min="0" step="100000" value="1000000">
         </span>
+        <span class="ctl">min liquidity $
+          <input id="in_liq" type="number" min="0" step="500" value="2000">
+        </span>
+        <span class="ctl">min fees 24h ◎
+          <input id="in_fees" type="number" min="0" step="1" value="10" title="Estimated 24h trading fees in SOL (volume × 0.25% ÷ SOL price)">
+        </span>
         <span class="ctl">sort
           <select id="sel_sort">
             <option value="mcap" selected>market cap</option>
             <option value="vol">24h volume</option>
+            <option value="fees">24h fees</option>
+            <option value="liq">liquidity</option>
             <option value="gain">24h gainers</option>
             <option value="new">newest migrated</option>
           </select>
@@ -77,7 +85,7 @@
 
   </div>
 
-  <script src="js/solwatcher.js?v=20260709"></script>
+  <script src="js/solwatcher.js?v=20260710"></script>
 </body>
 
 </html>

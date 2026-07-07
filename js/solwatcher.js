@@ -3,11 +3,13 @@
 
 const GT = "https://api.geckoterminal.com/api/v2";
 const DEX = "pumpswap"; // pump.fun tokens land here once they graduate
+const PUMPSWAP_FEE = 0.0025; // ~0.25% swap fee, used to estimate fees paid
 
 const $ = (id) => document.getElementById(id);
 
 let timer = null;
 let loading = false;
+let lastData = null; // cache so filter/sort tweaks re-render without refetching
 
 // ── Formatting helpers ─────────────────────────────────────────────────
 function fmtUsd(n) {
@@ -39,6 +41,22 @@ function fmtPct(n) {
   n = Number(n);
   if (!isFinite(n)) return "—";
   return (n > 0 ? "+" : "") + n.toFixed(1) + "%";
+}
+
+function fmtSol(n) {
+  n = Number(n);
+  if (!isFinite(n) || n < 0) return "—";
+  if (n >= 1000) return (n / 1000).toFixed(1) + "K ◎";
+  if (n >= 10) return n.toFixed(0) + " ◎";
+  return n.toFixed(1) + " ◎";
+}
+
+// Estimated 24h trading fees paid, in SOL: 24h volume × fee rate ÷ SOL price.
+function estFeesSol(a) {
+  const vol = Number(a.volume_usd?.h24) || 0;
+  const solUsd = Number(a.quote_token_price_usd) || 0;
+  if (!vol || !solUsd) return 0;
+  return (vol * PUMPSWAP_FEE) / solUsd;
 }
 
 function ago(iso) {
@@ -112,10 +130,12 @@ function buildCard(pool, tokens) {
     </div>
     <div class="coin-stats">
       <div class="cs"><span class="cs-l">price</span><span class="cs-v">${fmtPrice(a.base_token_price_usd)}</span></div>
+      <div class="cs"><span class="cs-l">liquidity</span><span class="cs-v">${fmtUsd(pool._liq)}</span></div>
       <div class="cs"><span class="cs-l">5m</span><span class="cs-v ${pctClass(pc.m5)}">${fmtPct(pc.m5)}</span></div>
       <div class="cs"><span class="cs-l">1h</span><span class="cs-v ${pctClass(pc.h1)}">${fmtPct(pc.h1)}</span></div>
       <div class="cs"><span class="cs-l">24h</span><span class="cs-v ${pctClass(pc.h24)}">${fmtPct(pc.h24)}</span></div>
       <div class="cs"><span class="cs-l">vol 24h</span><span class="cs-v">${fmtUsd(vol.h24)}</span></div>
+      <div class="cs"><span class="cs-l">fees 24h</span><span class="cs-v">${fmtSol(pool._feesSol)}</span></div>
       <div class="cs"><span class="cs-l">migrated</span><span class="cs-v">${ago(a.pool_created_at)} ago</span></div>
     </div>
     <div class="coin-links">
@@ -129,6 +149,8 @@ function buildCard(pool, tokens) {
 
 function render(data) {
   const threshold = Number($("in_min").value) || 0;
+  const minLiq = Number($("in_liq").value) || 0;
+  const minFees = Number($("in_fees").value) || 0;
   const sort = $("sel_sort").value;
 
   // dedupe by mint, keep the pool with the highest market cap / fdv
@@ -138,16 +160,24 @@ function render(data) {
     if (!mint) continue;
     const mc = Number(p.attributes.market_cap_usd) || Number(p.attributes.fdv_usd) || 0;
     const prev = byMint.get(mint);
-    if (!prev || mc > prev._mc) { p._mc = mc; byMint.set(mint, p); }
+    if (!prev || mc > prev._mc) {
+      p._mc = mc;
+      p._liq = Number(p.attributes.reserve_in_usd) || 0;
+      p._feesSol = estFeesSol(p.attributes);
+      byMint.set(mint, p);
+    }
   }
 
-  let list = [...byMint.values()].filter((p) => p._mc >= threshold);
+  let list = [...byMint.values()].filter((p) =>
+    p._mc >= threshold && p._liq >= minLiq && p._feesSol >= minFees);
 
   list.sort((x, y) => {
     const ax = x.attributes, ay = y.attributes;
     if (sort === "vol") return (Number(ay.volume_usd?.h24) || 0) - (Number(ax.volume_usd?.h24) || 0);
     if (sort === "new") return new Date(ay.pool_created_at) - new Date(ax.pool_created_at);
     if (sort === "gain") return (Number(ay.price_change_percentage?.h24) || 0) - (Number(ax.price_change_percentage?.h24) || 0);
+    if (sort === "fees") return y._feesSol - x._feesSol;
+    if (sort === "liq") return y._liq - x._liq;
     return y._mc - x._mc; // mcap
   });
 
@@ -179,6 +209,7 @@ async function refresh() {
   try {
     const pages = Math.min(10, Math.max(1, Number($("in_pages").value) || 5));
     const data = await fetchAll(pages);
+    lastData = data;
     render(data);
   } catch (e) {
     $("status").textContent = "Error: " + (e.message || e) +
@@ -200,8 +231,9 @@ function scheduleAuto() {
 
 window.addEventListener("DOMContentLoaded", () => {
   $("btn_refresh").addEventListener("click", refresh);
-  $("in_min").addEventListener("change", () => { if ($("grid").children.length) refresh(); });
-  $("sel_sort").addEventListener("change", refresh);
+  // Filter/sort tweaks re-render from cached data — no extra API calls.
+  ["in_min", "in_liq", "in_fees", "sel_sort"].forEach((id) =>
+    $(id).addEventListener("change", () => { if (lastData) render(lastData); }));
   $("cb_auto").addEventListener("change", scheduleAuto);
   $("in_every").addEventListener("change", scheduleAuto);
   refresh();
