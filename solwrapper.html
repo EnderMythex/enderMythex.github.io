@@ -79,6 +79,12 @@
 
   </div>
 
+  <!-- Buffer polyfill: @solana/web3.js needs a global Buffer to serialize transactions in the browser -->
+  <script type="module">
+    import { Buffer } from "https://esm.sh/buffer@6.0.3";
+    window.Buffer = window.Buffer || Buffer;
+    window.global = window.global || window;
+  </script>
   <script src="https://unpkg.com/@solana/web3.js@1.95.8/lib/index.iife.min.js"></script>
   <script src="js/solwrapper.js"></script>
 </body>
