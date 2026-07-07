@@ -1,28 +1,26 @@
 /* global.css — full-black base with subtle glass / blur accents */
-html,
+html {
+  background: #000;
+}
+
+/* Colored glows painted straight onto the body with fixed attachment, so they
+   anchor to the viewport and fill the whole page — they can't be clipped by a
+   parent or "left behind" on scroll (the reason a ::before layer looked cut). */
 body {
   margin: 0;
   padding: 0;
-  min-height: 100%;
-  background: #000;
+  min-height: 100vh;
   color: #fff;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
-
-/* Colored glows on a black base so the frosted-glass blur has something to
-   diffuse. A fixed full-viewport layer so the purple/blue never gets clipped
-   or "left behind" while scrolling — it stays painted across the whole page. */
-body::before {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  pointer-events: none;
-  background:
-    radial-gradient(900px 540px at 4% -4%, rgba(132, 116, 226, 0.30), transparent 56%),
-    radial-gradient(820px 500px at 104% 8%, rgba(64, 172, 184, 0.20), transparent 52%),
-    radial-gradient(820px 560px at 92% 98%, rgba(168, 84, 214, 0.30), transparent 56%),
-    radial-gradient(1000px 680px at 22% 108%, rgba(126, 78, 214, 0.26), transparent 58%);
+  background-color: #000;
+  background-image:
+    radial-gradient(48% 42% at 4% 4%, rgba(132, 116, 226, 0.34), transparent 72%),
+    radial-gradient(44% 40% at 100% 12%, rgba(64, 172, 184, 0.24), transparent 72%),
+    radial-gradient(52% 50% at 96% 96%, rgba(170, 84, 216, 0.36), transparent 72%),
+    radial-gradient(56% 52% at 6% 100%, rgba(128, 78, 216, 0.32), transparent 72%),
+    radial-gradient(70% 70% at 50% 50%, rgba(90, 70, 150, 0.10), transparent 78%);
+  background-attachment: fixed;
+  background-repeat: no-repeat;
 }
 
 /* ── Custom scrollbar ────────────────────────────────────────────────── */
