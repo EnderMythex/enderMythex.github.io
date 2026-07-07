@@ -51,6 +51,31 @@ input[type=number] {
   width: 6.5em;
 }
 
+.keyrow {
+  margin-top: .7rem;
+  padding-top: .7rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.keyrow input[type=password] {
+  min-width: 15em;
+}
+
+.keyrow .getkey {
+  color: #9cf;
+  font-size: .74rem;
+  text-decoration: none;
+}
+
+.keyrow .getkey:hover {
+  text-decoration: underline;
+}
+
+.keyrow .keynote {
+  color: #666;
+  font-size: .7rem;
+}
+
 #status {
   min-height: 1.3em;
   margin-top: .7rem;

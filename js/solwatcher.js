@@ -8,6 +8,8 @@
 const GT = "https://api.geckoterminal.com/api/v2";
 const DEX = "pumpswap";
 const DS = "https://api.dexscreener.com";
+const BIRDEYE = "https://public-api.birdeye.so";
+const KEY_LS = "solwatcher_birdeye_key";
 const PUMPSWAP_FEE = 0.0025; // ~0.25% swap fee, used to estimate 24h fees
 
 const $ = (id) => document.getElementById(id);
@@ -190,6 +192,43 @@ function mergeRecords(gt, ds) {
   return out;
 }
 
+// ── Optional: overlay authoritative data from the user's Birdeye key ───
+// Purely additive — every field falls back to the existing value, so a bad
+// key or a changed response shape can never break the board.
+async function birdeyeOverlay(records, key) {
+  const num = (v) => { const n = Number(v); return isFinite(n) ? n : undefined; };
+  // only the strongest candidates, to stay light on the user's quota
+  const top = records.filter((r) => r.mcap > 0).sort((a, b) => b.mcap - a.mcap).slice(0, 40);
+  let i = 0, hits = 0;
+  const CONCURRENCY = 4;
+  async function worker() {
+    while (i < top.length) {
+      const r = top[i++];
+      try {
+        const res = await fetch(`${BIRDEYE}/defi/token_overview?address=${r.mint}`,
+          { headers: { "X-API-KEY": key, "x-chain": "solana", Accept: "application/json" } });
+        if (!res.ok) continue;
+        const j = await res.json();
+        const d = j && j.data;
+        if (!d) continue;
+        const mc = num(d.realMc) ?? num(d.mc); if (mc) r.mcap = mc;
+        const liq = num(d.liquidity); if (liq != null) r.liq = liq;
+        const price = num(d.price); if (price) r.price = price;
+        const vol = num(d.v24hUSD);
+        if (vol != null) { r.vol24 = vol; if (r.solUsd > 0) r.feesSol = vol * PUMPSWAP_FEE / r.solUsd; }
+        const h24 = num(d.priceChange24hPercent); if (h24 != null) r.h24 = h24;
+        const h1 = num(d.priceChange1hPercent); if (h1 != null) r.h1 = h1;
+        const m5 = num(d.priceChange30mPercent); if (m5 != null) r.m5 = m5;
+        if (d.logoURI) r.image = d.image || d.logoURI;
+        r._birdeye = true;
+        hits++;
+      } catch (e) { /* ignore, keep existing values */ }
+    }
+  }
+  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+  return hits;
+}
+
 // ── Render ─────────────────────────────────────────────────────────────
 function buildCard(r) {
   const el = document.createElement("div");
@@ -256,10 +295,12 @@ function render(records) {
   }
 
   const now = new Date().toLocaleTimeString();
+  const viaBirdeye = list.some((r) => r._birdeye);
   $("s_count").textContent = list.length;
   $("s_updated").textContent = now;
   $("status").textContent =
-    `Showing ${list.length} pump.fun graduates ≥ ${fmtUsd(threshold)} · updated ${now}`;
+    `Showing ${list.length} pump.fun graduates ≥ ${fmtUsd(threshold)} · updated ${now}` +
+    (viaBirdeye ? " · Birdeye key active ✓" : "");
   $("status").className = "ok";
 }
 
@@ -275,8 +316,13 @@ async function refresh() {
     const gt = await discover(pages);
     let ds = new Map();
     try { ds = await enrich([...gt.keys()]); } catch (e) { /* keep GT data if DS fails */ }
-    lastRecords = mergeRecords(gt, ds);
-    render(lastRecords);
+    const records = mergeRecords(gt, ds);
+    const key = $("in_key").value.trim();
+    if (key) {
+      try { await birdeyeOverlay(records, key); } catch (e) { /* keep DexScreener data */ }
+    }
+    lastRecords = records;
+    render(records);
   } catch (e) {
     $("status").textContent = "Error: " + (e.message || e) +
       " — the free APIs are rate-limited; try again shortly.";
@@ -296,10 +342,18 @@ function scheduleAuto() {
 }
 
 window.addEventListener("DOMContentLoaded", () => {
+  // restore a previously saved Birdeye key (local only)
+  try { $("in_key").value = localStorage.getItem(KEY_LS) || ""; } catch (e) {}
+
   $("btn_refresh").addEventListener("click", refresh);
   // Filter/sort tweaks re-render from cached data — no extra API calls.
   ["in_min", "in_liq", "in_fees", "sel_sort"].forEach((id) =>
     $(id).addEventListener("change", () => { if (lastRecords) render(lastRecords); }));
+  // Persist the key and refetch (with Birdeye) when it changes.
+  $("in_key").addEventListener("change", () => {
+    try { localStorage.setItem(KEY_LS, $("in_key").value.trim()); } catch (e) {}
+    refresh();
+  });
   refresh();
   scheduleAuto();
   $("cb_auto").addEventListener("change", scheduleAuto);
