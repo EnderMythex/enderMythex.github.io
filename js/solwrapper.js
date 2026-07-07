@@ -23,6 +23,14 @@ function setWrapStatus(msg, cls) {
   el.className = cls || "";
 }
 
+// Status with a clickable Solscan link. `sig` is base58 (safe to inline).
+function setWrapStatusTx(msg, sig, cls) {
+  const el = $("w_status");
+  el.className = cls || "";
+  el.innerHTML = msg + ' <a href="https://solscan.io/tx/' + sig +
+    '" target="_blank" rel="noopener" style="color:#9cf;">view on Solscan ↗</a>';
+}
+
 // ── Wallet / connection state ──────────────────────────────────────────
 let connection = null;
 let walletAddr = null;
@@ -106,18 +114,41 @@ function closeAccountIx(account, dest, owner) {
   });
 }
 
+// Submit a transaction and return its signature. Confirmation is handled
+// separately so a slow-confirming (but landed) tx is never reported as failed.
 async function sendTx(instructions, ownerPub) {
   const { Transaction } = window.solanaWeb3;
   const conn = getConnection();
   const tx = new Transaction();
   instructions.forEach((ix) => tx.add(ix));
   tx.feePayer = ownerPub;
-  const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash("confirmed");
+  const { blockhash } = await conn.getLatestBlockhash("confirmed");
   tx.recentBlockhash = blockhash;
   const { signature } = await window.solana.signAndSendTransaction(tx);
-  setWrapStatus("Confirming " + signature.slice(0, 8) + "…", "");
-  await conn.confirmTransaction({ signature, blockhash, lastValidBlockHeight }, "confirmed");
   return signature;
+}
+
+// Poll signature status instead of confirmTransaction (which throws
+// "block height exceeded" on slow public RPCs even when the tx lands).
+// Returns { state: "ok" | "err" | "pending", ... }.
+async function pollConfirm(signature, timeoutMs = 45000) {
+  const conn = getConnection();
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    let st = null;
+    try {
+      const res = await conn.getSignatureStatuses([signature], { searchTransactionHistory: true });
+      st = res && res.value && res.value[0];
+    } catch (e) { /* transient RPC hiccup — keep polling */ }
+    if (st) {
+      if (st.err) return { state: "err", err: st.err };
+      if (st.confirmationStatus === "confirmed" || st.confirmationStatus === "finalized") {
+        return { state: "ok", status: st.confirmationStatus };
+      }
+    }
+    await new Promise((r) => setTimeout(r, 1500));
+  }
+  return { state: "pending" };
 }
 
 // ── Balance display ────────────────────────────────────────────────────
@@ -179,7 +210,15 @@ async function doWrap() {
       SystemProgram.transfer({ fromPubkey: owner, toPubkey: ata, lamports }),
       syncNativeIx(ata),
     ], owner);
-    setWrapStatus("Wrapped " + amount + " SOL. Tx: " + sig, "ok");
+    setWrapStatusTx("Submitted — confirming…", sig, "");
+    const res = await pollConfirm(sig);
+    if (res.state === "ok") {
+      setWrapStatusTx("✔ Wrapped " + amount + " SOL. It's in your wSOL token account (shows as “Wrapped SOL” in Phantom).", sig, "ok");
+    } else if (res.state === "err") {
+      setWrapStatusTx("On-chain error: " + JSON.stringify(res.err) + ".", sig, "err");
+    } else {
+      setWrapStatusTx("Submitted — still confirming (slow RPC). Your balances below will update once it lands.", sig, "");
+    }
     await refreshBalances();
   } catch (e) {
     setWrapStatus("Wrap failed: " + (e.message || e), "err");
@@ -195,7 +234,15 @@ async function doUnwrap() {
 
     setWrapStatus("Unwrapping — closing wSOL account, returning SOL…", "");
     const sig = await sendTx([closeAccountIx(ata, owner, owner)], owner);
-    setWrapStatus("Unwrapped. All wSOL + rent returned to your wallet. Tx: " + sig, "ok");
+    setWrapStatusTx("Submitted — confirming…", sig, "");
+    const res = await pollConfirm(sig);
+    if (res.state === "ok") {
+      setWrapStatusTx("✔ Unwrapped. All wSOL + rent returned to your wallet as native SOL.", sig, "ok");
+    } else if (res.state === "err") {
+      setWrapStatusTx("On-chain error: " + JSON.stringify(res.err) + ".", sig, "err");
+    } else {
+      setWrapStatusTx("Submitted — still confirming (slow RPC). Your SOL balance below will update once it lands.", sig, "");
+    }
     await refreshBalances();
   } catch (e) {
     setWrapStatus("Unwrap failed: " + (e.message || e), "err");
