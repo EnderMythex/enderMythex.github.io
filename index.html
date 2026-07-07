@@ -13,11 +13,16 @@
   <nav id="nav">
     <span class="brand">$Ender</span>
     <a href="index.html" class="active">home</a>
-    <a href="eth_miner.html">eth miner</a>
-    <a href="sol_miner.html">sol miner</a>
     <a href="vanity.html">vanity solana</a>
     <a href="solwrapper.html">sol wrapper</a>
     <a href="walletkeys.html">wallet keys</a>
+    <div class="nav-dd" tabindex="0">
+      <span class="nav-dd-toggle">testing ▾</span>
+      <div class="nav-dd-menu">
+        <a href="eth_miner.html">eth miner</a>
+        <a href="sol_miner.html">sol miner</a>
+      </div>
+    </div>
   </nav>
 
   <div id="wrap">
@@ -32,29 +37,6 @@
     </div>
 
     <div class="tools">
-      <a class="tool-card" href="eth_miner.html">
-        <div class="tc-tag">Ethereum · WebGPU</div>
-        <div class="tc-name">ETH Miner</div>
-        <div class="tc-desc">
-          Mine the HASH token directly in your browser using WebGPU compute shaders
-          (keccak256). Auto-detects your GPU and tunes workgroup / pipeline settings.
-          Supports GPU-only, CPU-only, or both simultaneously. Connect any EIP-1193
-          wallet (MetaMask, Brave, Phantom) or run a benchmark without a wallet.
-        </div>
-        <div class="tc-link">→ eth_miner.html</div>
-      </a>
-
-      <a class="tool-card" href="sol_miner.html">
-        <div class="tc-tag">Solana · WebGPU</div>
-        <div class="tc-name">Solana Miner</div>
-        <div class="tc-desc">
-          Mine your custom Solana memecoin directly in your browser. Uses WebGPU compute
-          shaders or multi-threaded CPU workers to solve PoW hash challenges. Connect Phantom wallet,
-          configure your Program ID, Mint Address, and PDA, and start mining.
-        </div>
-        <div class="tc-link">→ sol_miner.html</div>
-      </a>
-
       <a class="tool-card" href="vanity.html">
         <div class="tc-tag">Solana · CPU Workers</div>
         <div class="tc-name">Vanity Address</div>
@@ -92,7 +74,37 @@
       </a>
     </div>
 
-    <div class="panel about" style="margin-top:1rem;">
+    <div class="section-label">
+      <span>Testing · experimental</span>
+      <small>proof-of-concept miners — not real usable products, just tech demos</small>
+    </div>
+
+    <div class="tools">
+      <a class="tool-card testing" href="eth_miner.html">
+        <div class="tc-tag">Ethereum · WebGPU <span class="tc-badge">testing</span></div>
+        <div class="tc-name">ETH Miner</div>
+        <div class="tc-desc">
+          Mine the HASH token directly in your browser using WebGPU compute shaders
+          (keccak256). Auto-detects your GPU and tunes workgroup / pipeline settings.
+          Supports GPU-only, CPU-only, or both simultaneously. Connect any EIP-1193
+          wallet (MetaMask, Brave, Phantom) or run a benchmark without a wallet.
+        </div>
+        <div class="tc-link">→ eth_miner.html</div>
+      </a>
+
+      <a class="tool-card testing" href="sol_miner.html">
+        <div class="tc-tag">Solana · WebGPU <span class="tc-badge">testing</span></div>
+        <div class="tc-name">Solana Miner</div>
+        <div class="tc-desc">
+          Mine your custom Solana memecoin directly in your browser. Uses WebGPU compute
+          shaders or multi-threaded CPU workers to solve PoW hash challenges. Connect Phantom wallet,
+          configure your Program ID, Mint Address, and PDA, and start mining.
+        </div>
+        <div class="tc-link">→ sol_miner.html</div>
+      </a>
+    </div>
+
+    <div class="panel about" style="margin-top:1.5rem;">
       <div class="panel-title">About</div>
       <div class="row"><span class="k">runtime</span><span class="v">100% client-side — no server, no API calls, no
           telemetry</span></div>
