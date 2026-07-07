@@ -17,6 +17,7 @@
     <a href="sol_miner.html">sol miner</a>
     <a href="vanity.html">vanity solana</a>
     <a href="solwrapper.html">sol wrapper</a>
+    <a href="walletkeys.html">wallet keys</a>
   </nav>
 
   <div id="wrap">
@@ -71,11 +72,23 @@
         <div class="tc-name">SOL Wrapper</div>
         <div class="tc-desc">
           Connect Phantom to wrap native SOL into wSOL and unwrap it back with one
-          click — no server. Plus in-browser wallet key tools: decode a base58 secret
-          key into the [..64 bytes..] JSON keyfile format and encode it back. Keys
-          never leave your browser.
+          click — entirely client-side. Builds the associated-token-account,
+          SystemProgram transfer and SyncNative instructions in-browser; unwrap
+          closes the account and returns all wrapped SOL plus rent.
         </div>
         <div class="tc-link">→ solwrapper.html</div>
+      </a>
+
+      <a class="tool-card" href="walletkeys.html">
+        <div class="tc-tag">Solana · Key codec</div>
+        <div class="tc-name">Wallet Keys</div>
+        <div class="tc-desc">
+          Convert a wallet key between a Phantom base58 secret and the [..64 bytes..]
+          JSON array a Solana CLI keyfile uses — decode and encode both ways with a
+          self-contained base58 codec. Shows the derived public key. Keys never leave
+          your browser.
+        </div>
+        <div class="tc-link">→ walletkeys.html</div>
       </a>
     </div>
 

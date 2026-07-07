@@ -17,6 +17,7 @@
     <a href="sol_miner.html">sol miner</a>
     <a href="vanity.html">vanity solana</a>
     <a href="solwrapper.html" class="active">sol wrapper</a>
+    <a href="walletkeys.html">wallet keys</a>
   </nav>
 
   <div id="wrap">
@@ -63,44 +64,11 @@
       <div id="w_status"></div>
     </div>
 
-    <!-- Decoder panel -->
-    <div class="panel">
-      <div class="panel-title">Decode — base58 key → byte array (JSON)</div>
-      <div class="hint" style="margin-bottom:.5rem;">
-        Same output as the Node <code>bs58.decode</code> snippet: a Phantom base58 secret key
-        becomes the <code>[..64 bytes..]</code> JSON array a Solana CLI keyfile uses.
-        Runs fully in your browser — nothing is sent anywhere.
-      </div>
-      <textarea id="dec_in" class="io" rows="2" placeholder="paste base58 private key here…" autocomplete="off" spellcheck="false"></textarea>
-      <div class="controls" style="margin:.5rem 0;">
-        <button id="btn_decode">decode →</button>
-        <button id="btn_dec_copy" class="ghost">copy JSON</button>
-        <button id="btn_dec_dl" class="ghost">download soltowsol.json</button>
-      </div>
-      <textarea id="dec_out" class="io" rows="3" placeholder="[12,34,…] byte array output" readonly></textarea>
-      <div id="dec_info" class="hint"></div>
-    </div>
-
-    <!-- Encoder panel -->
-    <div class="panel">
-      <div class="panel-title">Encode — byte array (JSON) → base58 key</div>
-      <div class="hint" style="margin-bottom:.5rem;">
-        The reverse: paste a <code>[..64 bytes..]</code> array (e.g. a Solana CLI keyfile)
-        and get the base58 secret key to import into Phantom.
-      </div>
-      <textarea id="enc_in" class="io" rows="3" placeholder="[12,34,56,…]" autocomplete="off" spellcheck="false"></textarea>
-      <div class="controls" style="margin:.5rem 0;">
-        <button id="btn_encode">encode →</button>
-        <button id="btn_enc_copy" class="ghost">copy key</button>
-      </div>
-      <textarea id="enc_out" class="io" rows="2" placeholder="base58 secret key output" readonly></textarea>
-      <div id="enc_info" class="hint"></div>
-    </div>
-
     <div class="panel">
       <div class="hint">
-        ⚠ These key tools are for <b>your own</b> wallets. A base58 secret / byte array grants full
-        control of the funds — never paste a key you don't own and never share the output.
+        Need to convert a wallet key between base58 and the <code>[..64 bytes..]</code> Solana
+        CLI keyfile format? That moved to its own page →
+        <a href="walletkeys.html" style="color:#9cf;">wallet keys</a>.
       </div>
     </div>
 

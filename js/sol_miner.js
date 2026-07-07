@@ -586,7 +586,7 @@ async function submitMine(nonce) {
     
     // Derive Associated Token Account (ATA) for miner's token
     const TOKEN_PROGRAM_ID = new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
-    const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey("ATokenGPvbdGVxr1b2xr1b2hvZbsiqW5xWH25efTNsLJA8knL");
+    const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
     
     const [minerTokenAccountPubkey] = PublicKey.findProgramAddressSync(
       [
