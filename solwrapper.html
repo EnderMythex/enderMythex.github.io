@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>SOL Wrapper — wrap/unwrap wSOL + wallet key tools</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="css/global.css" />
+  <link rel="stylesheet" href="css/solwrapper.css" />
+</head>
+
+<body>
+  <nav id="nav">
+    <span class="brand">$Ender</span>
+    <a href="index.html">home</a>
+    <a href="eth_miner.html">eth miner</a>
+    <a href="sol_miner.html">sol miner</a>
+    <a href="vanity.html">vanity solana</a>
+    <a href="solwrapper.html" class="active">sol wrapper</a>
+  </nav>
+
+  <div id="wrap">
+
+    <!-- Wallet / network panel -->
+    <div class="panel">
+      <div class="panel-title">Wallet &amp; network</div>
+      <div class="controls">
+        <button id="btn_connect">connect Phantom</button>
+        <span class="ctl">network
+          <select id="sel_net">
+            <option value="mainnet-beta" selected>mainnet-beta</option>
+            <option value="devnet">devnet</option>
+          </select>
+        </span>
+        <span class="ctl">custom rpc
+          <input id="in_rpc" type="text" placeholder="(optional) https://your-rpc…" autocomplete="off">
+        </span>
+        <button id="btn_refresh">refresh balances</button>
+      </div>
+      <div id="stats">
+        <div class="row"><span class="k">wallet</span><span class="v" id="s_wallet">—</span></div>
+        <div class="row"><span class="k">SOL balance</span><span class="v" id="s_sol">—</span></div>
+        <div class="row"><span class="k">wSOL balance</span><span class="v" id="s_wsol">—</span></div>
+        <div class="row"><span class="k">wSOL account</span><span class="v" id="s_ata">—</span></div>
+      </div>
+    </div>
+
+    <!-- Wrap / unwrap panel -->
+    <div class="panel">
+      <div class="panel-title">Wrap / unwrap SOL ↔ wSOL</div>
+      <div class="hint" style="margin-bottom:.7rem;">
+        Wrapping moves native SOL into your associated <code>wSOL</code> token account
+        (<code>So1111…1112</code>). Unwrapping <b>closes</b> that account and returns
+        <b>all</b> wrapped SOL plus the rent back to your wallet.
+      </div>
+      <div class="controls">
+        <span class="ctl">amount (SOL)
+          <input id="in_amount" type="number" min="0" step="0.001" value="0.1">
+        </span>
+        <button id="btn_wrap">↓ wrap SOL → wSOL</button>
+        <button id="btn_unwrap">↑ unwrap (give it back)</button>
+      </div>
+      <div id="w_status"></div>
+    </div>
+
+    <!-- Decoder panel -->
+    <div class="panel">
+      <div class="panel-title">Decode — base58 key → byte array (JSON)</div>
+      <div class="hint" style="margin-bottom:.5rem;">
+        Same output as the Node <code>bs58.decode</code> snippet: a Phantom base58 secret key
+        becomes the <code>[..64 bytes..]</code> JSON array a Solana CLI keyfile uses.
+        Runs fully in your browser — nothing is sent anywhere.
+      </div>
+      <textarea id="dec_in" class="io" rows="2" placeholder="paste base58 private key here…" autocomplete="off" spellcheck="false"></textarea>
+      <div class="controls" style="margin:.5rem 0;">
+        <button id="btn_decode">decode →</button>
+        <button id="btn_dec_copy" class="ghost">copy JSON</button>
+        <button id="btn_dec_dl" class="ghost">download soltowsol.json</button>
+      </div>
+      <textarea id="dec_out" class="io" rows="3" placeholder="[12,34,…] byte array output" readonly></textarea>
+      <div id="dec_info" class="hint"></div>
+    </div>
+
+    <!-- Encoder panel -->
+    <div class="panel">
+      <div class="panel-title">Encode — byte array (JSON) → base58 key</div>
+      <div class="hint" style="margin-bottom:.5rem;">
+        The reverse: paste a <code>[..64 bytes..]</code> array (e.g. a Solana CLI keyfile)
+        and get the base58 secret key to import into Phantom.
+      </div>
+      <textarea id="enc_in" class="io" rows="3" placeholder="[12,34,56,…]" autocomplete="off" spellcheck="false"></textarea>
+      <div class="controls" style="margin:.5rem 0;">
+        <button id="btn_encode">encode →</button>
+        <button id="btn_enc_copy" class="ghost">copy key</button>
+      </div>
+      <textarea id="enc_out" class="io" rows="2" placeholder="base58 secret key output" readonly></textarea>
+      <div id="enc_info" class="hint"></div>
+    </div>
+
+    <div class="panel">
+      <div class="hint">
+        ⚠ These key tools are for <b>your own</b> wallets. A base58 secret / byte array grants full
+        control of the funds — never paste a key you don't own and never share the output.
+      </div>
+    </div>
+
+  </div>
+
+  <script src="https://unpkg.com/@solana/web3.js@1.95.8/lib/index.iife.min.js"></script>
+  <script src="js/solwrapper.js"></script>
+</body>
+
+</html>
