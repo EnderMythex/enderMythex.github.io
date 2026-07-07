@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>SolWatcher — pump.fun graduates over $1M</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="css/global.css?v=20260709" />
+  <link rel="stylesheet" href="css/solwatcher.css?v=20260709" />
+</head>
+
+<body>
+  <nav id="nav">
+    <span class="brand">$Ender</span>
+    <a href="index.html">home</a>
+    <a href="solwatcher.html" class="active">solwatcher</a>
+    <a href="vanity.html">vanity solana</a>
+    <a href="solwrapper.html">sol wrapper</a>
+    <a href="walletkeys.html">wallet keys</a>
+    <div class="nav-dd" tabindex="0">
+      <span class="nav-dd-toggle">testing ▾</span>
+      <div class="nav-dd-menu">
+        <a href="eth_miner.html">eth miner</a>
+        <a href="sol_miner.html">sol miner</a>
+      </div>
+    </div>
+  </nav>
+
+  <div id="wrap">
+
+    <div class="watch-hero">
+      <h1>Sol<span class="grad">Watcher</span></h1>
+      <p>Live pump.fun graduates — coins that migrated off the bonding curve to
+        PumpSwap and are now trading above your market-cap threshold.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Filters</div>
+      <div class="controls">
+        <span class="ctl">min market cap $
+          <input id="in_min" type="number" min="0" step="100000" value="1000000">
+        </span>
+        <span class="ctl">sort
+          <select id="sel_sort">
+            <option value="mcap" selected>market cap</option>
+            <option value="vol">24h volume</option>
+            <option value="gain">24h gainers</option>
+            <option value="new">newest migrated</option>
+          </select>
+        </span>
+        <span class="ctl">pages
+          <input id="in_pages" type="number" min="1" max="10" step="1" value="5" title="GeckoTerminal pages to scan (20 pools each)">
+        </span>
+        <span class="ctl"><label><input id="cb_auto" type="checkbox" checked> auto</label></span>
+        <span class="ctl">every
+          <input id="in_every" type="number" min="20" max="600" step="5" value="45"> s
+        </span>
+        <button id="btn_refresh">↻ refresh</button>
+      </div>
+      <div id="status"></div>
+      <div class="summary">
+        <span class="k">matches</span><span class="v" id="s_count">—</span>
+        <span class="k">updated</span><span class="v" id="s_updated">—</span>
+      </div>
+    </div>
+
+    <div id="grid"></div>
+
+    <div class="panel">
+      <div class="hint">
+        Data from the free <a href="https://www.geckoterminal.com/" target="_blank" rel="noopener">GeckoTerminal</a>
+        public API (keyless, rate-limited ~30 req/min). "Graduated" = pump.fun tokens that filled their
+        bonding curve and migrated to the PumpSwap AMM. Market cap uses circulating market cap when available,
+        otherwise fully-diluted value (FDV). Not financial advice — DYOR before touching any of these.
+      </div>
+    </div>
+
+  </div>
+
+  <script src="js/solwatcher.js?v=20260709"></script>
+</body>
+
+</html>
