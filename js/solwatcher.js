@@ -97,6 +97,10 @@ async function discover(pages) {
       const id = p.relationships?.base_token?.data?.id || "";
       const mint = id.replace(/^solana_/, "");
       if (!mint) return;
+      // pump.fun coins are the only ones we want: their mint always ends in
+      // "pump". This drops PumpSwap pools for tokens launched elsewhere
+      // (e.g. Meteora "Virtual Curve" coins that were never on pump.fun).
+      if (!mint.endsWith("pump")) return;
       const mc = Number(a.market_cap_usd) || Number(a.fdv_usd) || 0;
       const prev = gt.get(mint);
       if (prev && prev.mcap >= mc) return;
