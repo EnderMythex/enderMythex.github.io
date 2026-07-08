@@ -105,6 +105,34 @@ body {
   border-bottom-color: rgba(255, 255, 255, 0.85);
 }
 
+/* ── Hamburger (mobile only) ─────────────────────────────────────────── */
+.nav-toggle {
+  display: none;
+}
+
+.nav-burger {
+  display: none; /* shown only on mobile */
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  width: 30px;
+  height: 26px;
+  padding: 4px 5px;
+  box-sizing: border-box;
+  cursor: pointer;
+  border-radius: 8px;
+  margin-left: auto;
+}
+
+.nav-burger span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: #cfcfe0;
+  transition: transform .22s ease, opacity .18s ease;
+}
+
 /* ── Nav dropdown (testing) ─────────────────────────────────────────── */
 .nav-dd {
   position: relative;
@@ -284,39 +312,83 @@ select option {
   font-size: .72rem;
 }
 
-/* ── Mobile: single compact scrollable row; expand the dropdown inline ── */
+/* ── Mobile: collapse the nav into a tap-to-open hamburger menu ───────── */
 @media (max-width: 560px) {
   #nav {
     top: .5rem;
     width: calc(100% - 1rem);
-    gap: .9rem;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    gap: .5rem;
+    padding: .5rem .7rem .5rem .9rem;
+    flex-wrap: wrap;
+    align-items: center;
   }
 
-  #nav::-webkit-scrollbar {
+  .nav-burger {
+    display: flex;
+  }
+
+  /* hide the links until the menu is opened */
+  #nav > a,
+  #nav > .nav-dd {
     display: none;
   }
 
-  #nav a {
-    white-space: nowrap;
+  /* opened: stack every item full-width below the bar */
+  #nav-toggle:checked ~ a,
+  #nav-toggle:checked ~ .nav-dd {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
   }
 
-  /* Hover dropdowns don't work on touch — flow eth/sol miner inline instead. */
-  .nav-dd,
-  .nav-dd-menu {
-    display: contents;
+  #nav-toggle:checked ~ a {
+    padding: .6rem .35rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    border-bottom: 0;
   }
 
-  .nav-dd-toggle {
+  #nav-toggle:checked ~ a:first-of-type {
+    margin-top: .35rem;
+  }
+
+  /* testing dropdown → its two items become normal rows in the list */
+  #nav-toggle:checked ~ .nav-dd .nav-dd-toggle {
     display: none;
   }
 
-  .nav-dd-menu a {
-    padding: .2rem .4rem;
+  #nav-toggle:checked ~ .nav-dd .nav-dd-menu {
+    position: static;
+    display: block;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    background: none;
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+    min-width: 0;
+  }
+
+  #nav-toggle:checked ~ .nav-dd .nav-dd-menu a {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    padding: .6rem .35rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
     border-radius: 0;
     background: none;
+  }
+
+  /* animate the burger into an X when open */
+  #nav-toggle:checked ~ .nav-burger span:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+  }
+
+  #nav-toggle:checked ~ .nav-burger span:nth-child(2) {
+    opacity: 0;
+  }
+
+  #nav-toggle:checked ~ .nav-burger span:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
   }
 }
