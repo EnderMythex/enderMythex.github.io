@@ -270,6 +270,40 @@
     grid-template-columns: 1fr;
   }
 
+  #hero {
+    margin: 1.5rem 0 1.8rem;
+  }
+
+  #hero h1 {
+    font-size: clamp(1.7rem, 8.5vw, 2.4rem);
+    letter-spacing: -.02em;
+  }
+
+  #hero p {
+    font-size: .85rem;
+  }
+
+  /* match the marquee full-bleed to the mobile #wrap padding (1rem) so it
+     doesn't push past the viewport */
+  .marquee {
+    margin-left: -1rem;
+    margin-right: -1rem;
+  }
+
+  .hero-cta {
+    width: 100%;
+  }
+
+  .hero-cta a {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+
+  .hero-stats {
+    gap: 1rem;
+    font-size: .7rem;
+  }
+
   .about.panel .row {
     grid-template-columns: 1fr;
   }

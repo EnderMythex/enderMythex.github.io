@@ -1,6 +1,7 @@
 /* global.css — full-black base with subtle glass / blur accents */
 html {
   background: #000;
+  overflow-x: hidden; /* no accidental horizontal scroll on phones */
 }
 
 /* Colored glows painted straight onto the body with fixed attachment, so they
@@ -10,6 +11,8 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  max-width: 100%;
+  overflow-x: hidden;
   color: #fff;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   background-color: #000;
