@@ -81,50 +81,39 @@ async function gtPage(page) {
   return res.json();
 }
 
-async function discover(pages) {
+// Primary, reliable discovery: DexScreener search returns the top PumpSwap
+// pairs with solid CORS and no aggressive rate limiting. We only keep
+// pump.fun mints (ending in "pump").
+async function dsSearchMints() {
+  const out = new Set();
+  const res = await fetch(`${DS}/latest/dex/search?q=pumpswap`, { headers: { Accept: "application/json" } });
+  if (!res.ok) throw new Error("DexScreener HTTP " + res.status);
+  const j = await res.json();
+  (j.pairs || []).forEach((p) => {
+    if (p.chainId !== "solana" || p.dexId !== "pumpswap") return;
+    const m = p.baseToken?.address;
+    if (m && m.endsWith("pump")) out.add(m);
+  });
+  return out;
+}
+
+// Optional extra breadth from GeckoTerminal. Best-effort only: its error/
+// rate-limit responses omit CORS headers, so any failure here is swallowed and
+// must never break the page.
+async function gtDiscoverMints(pages) {
+  const out = new Set();
+  if (pages < 1) return out;
   const results = await Promise.allSettled(
     Array.from({ length: pages }, (_, i) => gtPage(i + 1))
   );
-  const gt = new Map(); // mint -> fallback fields from GeckoTerminal
-  let anyOk = false;
   for (const r of results) {
     if (r.status !== "fulfilled") continue;
-    anyOk = true;
-    const tokens = {};
-    (r.value.included || []).forEach((t) => { tokens[t.id] = t.attributes; });
     (r.value.data || []).forEach((p) => {
-      const a = p.attributes;
-      const id = p.relationships?.base_token?.data?.id || "";
-      const mint = id.replace(/^solana_/, "");
-      if (!mint) return;
-      // pump.fun coins are the only ones we want: their mint always ends in
-      // "pump". This drops PumpSwap pools for tokens launched elsewhere
-      // (e.g. Meteora "Virtual Curve" coins that were never on pump.fun).
-      if (!mint.endsWith("pump")) return;
-      const mc = Number(a.market_cap_usd) || Number(a.fdv_usd) || 0;
-      const prev = gt.get(mint);
-      if (prev && prev.mcap >= mc) return;
-      const tok = tokens["solana_" + mint] || {};
-      gt.set(mint, {
-        mint,
-        symbol: tok.symbol || a.name || "?",
-        name: tok.name || "",
-        image: tok.image_url && tok.image_url !== "missing.png" ? tok.image_url : "",
-        mcap: mc,
-        liq: Number(a.reserve_in_usd) || 0,
-        price: Number(a.base_token_price_usd) || 0,
-        m5: Number(a.price_change_percentage?.m5),
-        h1: Number(a.price_change_percentage?.h1),
-        h24: Number(a.price_change_percentage?.h24),
-        vol24: Number(a.volume_usd?.h24) || 0,
-        solUsd: Number(a.quote_token_price_usd) || 0,
-        migratedIso: a.pool_created_at,
-        pairAddress: a.address,
-      });
+      const mint = (p.relationships?.base_token?.data?.id || "").replace(/^solana_/, "");
+      if (mint && mint.endsWith("pump")) out.add(mint);
     });
   }
-  if (!anyOk) throw new Error("GeckoTerminal unavailable (rate limit or network).");
-  return gt;
+  return out;
 }
 
 // ── Step 2: enrich with real market cap / liquidity from DexScreener ────
@@ -172,27 +161,23 @@ async function enrich(mints) {
   return map;
 }
 
-// Merge GeckoTerminal discovery with DexScreener data. DexScreener is the
-// source of truth for market cap / liquidity — GeckoTerminal's reserve_in_usd
-// and fdv are often stale or inflated, which used to surface dead tokens with a
-// fake liquidity/mcap whose real on-chain page shows ~$1. So a coin is only
-// shown if DexScreener actually has it, and every displayed number comes from
-// DexScreener (GeckoTerminal is used purely for discovery).
-function mergeRecords(gt, ds) {
+// Build records straight from DexScreener data (the source of truth for market
+// cap / liquidity / price). Every listed coin is therefore confirmed by
+// DexScreener, so its displayed numbers match its real on-chain token page.
+function buildRecords(ds) {
   let globalSol = 0;
   for (const d of ds.values()) if (Number(d.solUsd) > 0) { globalSol = Number(d.solUsd); break; }
 
   const out = [];
-  for (const [mint, g] of gt) {
-    const d = ds.get(mint);
-    if (!d) continue; // unconfirmed by DexScreener → drop (avoids fake-liquidity ghosts)
+  for (const [mint, d] of ds) {
+    if (!mint.endsWith("pump")) continue; // pump.fun only
     const solUsd = Number(d.solUsd) > 0 ? Number(d.solUsd) : globalSol;
     const vol24 = Number(d.vol24) || 0;
     out.push({
       mint,
-      symbol: (d.symbol || g.symbol || "?").toString().slice(0, 14),
-      name: (d.name || g.name || "").toString().slice(0, 40),
-      image: d.image || g.image || "",
+      symbol: (d.symbol || "?").toString().slice(0, 14),
+      name: (d.name || "").toString().slice(0, 40),
+      image: d.image || "",
       mcap: Number(d.mcap) || 0,
       liq: Number(d.liq) || 0,
       price: Number(d.price) || 0,
@@ -201,7 +186,7 @@ function mergeRecords(gt, ds) {
       h24: Number(d.h24),
       vol24,
       feesSol: solUsd > 0 ? vol24 * PUMPSWAP_FEE / solUsd : 0,
-      migratedIso: d.migratedIso || g.migratedIso,
+      migratedIso: d.migratedIso,
       pairAddress: d.pairAddress,
     });
   }
@@ -328,11 +313,18 @@ async function refresh() {
   if (!$("grid").children.length) $("status").textContent = "Loading pump.fun graduates…";
   $("status").className = "";
   try {
-    const pages = Math.min(10, Math.max(1, Number($("in_pages").value) || 5));
-    const gt = await discover(pages);
-    let ds = new Map();
-    try { ds = await enrich([...gt.keys()]); } catch (e) { /* keep GT data if DS fails */ }
-    const records = mergeRecords(gt, ds);
+    const pages = Math.min(10, Math.max(0, Number($("in_pages").value) || 0));
+    // Reliable primary discovery (DexScreener) + optional GeckoTerminal breadth.
+    const mints = new Set();
+    let primaryOk = false;
+    try { (await dsSearchMints()).forEach((m) => mints.add(m)); primaryOk = true; } catch (e) {}
+    try { (await gtDiscoverMints(pages)).forEach((m) => mints.add(m)); } catch (e) {}
+    if (!mints.size) {
+      if (!primaryOk) throw new Error("DexScreener unreachable — check your connection.");
+      throw new Error("No pump.fun graduates found right now.");
+    }
+    const ds = await enrich([...mints]);
+    const records = buildRecords(ds);
     const key = $("in_key").value.trim();
     if (key) {
       try { await birdeyeOverlay(records, key); } catch (e) { /* keep DexScreener data */ }
