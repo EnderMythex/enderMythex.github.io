@@ -168,39 +168,37 @@ async function enrich(mints) {
   return map;
 }
 
-// Merge GeckoTerminal discovery with DexScreener enrichment (DS wins).
+// Merge GeckoTerminal discovery with DexScreener data. DexScreener is the
+// source of truth for market cap / liquidity — GeckoTerminal's reserve_in_usd
+// and fdv are often stale or inflated, which used to surface dead tokens with a
+// fake liquidity/mcap whose real on-chain page shows ~$1. So a coin is only
+// shown if DexScreener actually has it, and every displayed number comes from
+// DexScreener (GeckoTerminal is used purely for discovery).
 function mergeRecords(gt, ds) {
-  // A representative SOL price, so per-coin fee math still works when one
-  // provider is missing the quote price for a token.
   let globalSol = 0;
   for (const d of ds.values()) if (Number(d.solUsd) > 0) { globalSol = Number(d.solUsd); break; }
-  if (!globalSol) for (const g of gt.values()) if (Number(g.solUsd) > 0) { globalSol = Number(g.solUsd); break; }
 
   const out = [];
   for (const [mint, g] of gt) {
-    const d = ds.get(mint) || {};
-    const pick = (k, fb) => (d[k] !== undefined && d[k] !== null && d[k] !== "" && !(typeof d[k] === "number" && !isFinite(d[k])) ? d[k] : fb);
-    // liquidity/volume: take whichever source has the larger real number, so a
-    // 0/garbage value from one provider is covered by the other
-    const liq = Math.max(Number(d.liq) || 0, Number(g.liq) || 0);
-    const vol24 = Math.max(Number(d.vol24) || 0, Number(g.vol24) || 0);
-    const solUsd = Number(d.solUsd) > 0 ? Number(d.solUsd)
-      : Number(g.solUsd) > 0 ? Number(g.solUsd) : globalSol;
+    const d = ds.get(mint);
+    if (!d) continue; // unconfirmed by DexScreener → drop (avoids fake-liquidity ghosts)
+    const solUsd = Number(d.solUsd) > 0 ? Number(d.solUsd) : globalSol;
+    const vol24 = Number(d.vol24) || 0;
     out.push({
       mint,
-      symbol: (pick("symbol", g.symbol) || "?").toString().slice(0, 14),
-      name: (pick("name", g.name) || "").toString().slice(0, 40),
-      image: pick("image", g.image),
-      mcap: Number(pick("mcap", g.mcap)) || 0,
-      liq,
-      price: Number(pick("price", g.price)) || 0,
-      m5: Number(pick("m5", g.m5)),
-      h1: Number(pick("h1", g.h1)),
-      h24: Number(pick("h24", g.h24)),
+      symbol: (d.symbol || g.symbol || "?").toString().slice(0, 14),
+      name: (d.name || g.name || "").toString().slice(0, 40),
+      image: d.image || g.image || "",
+      mcap: Number(d.mcap) || 0,
+      liq: Number(d.liq) || 0,
+      price: Number(d.price) || 0,
+      m5: Number(d.m5),
+      h1: Number(d.h1),
+      h24: Number(d.h24),
       vol24,
       feesSol: solUsd > 0 ? vol24 * PUMPSWAP_FEE / solUsd : 0,
-      migratedIso: pick("migratedIso", g.migratedIso),
-      pairAddress: pick("pairAddress", g.pairAddress),
+      migratedIso: d.migratedIso || g.migratedIso,
+      pairAddress: d.pairAddress,
     });
   }
   return out;
