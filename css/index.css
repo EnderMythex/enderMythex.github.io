@@ -77,6 +77,16 @@
   box-shadow: 0 8px 24px rgba(180, 160, 255, 0.18);
 }
 
+#rotcta {
+  min-width: 15rem;
+  text-align: center;
+}
+
+#rotcta-label {
+  display: inline-block;
+  transition: opacity .22s ease;
+}
+
 .hero-cta .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 12px 30px rgba(180, 160, 255, 0.32);

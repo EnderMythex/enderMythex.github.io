@@ -5,8 +5,8 @@
   <meta charset="utf-8" />
   <title>$HASH Tools</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="css/global.css?v=20260718" />
-  <link rel="stylesheet" href="css/index.css?v=20260718" />
+  <link rel="stylesheet" href="css/global.css?v=20260719" />
+  <link rel="stylesheet" href="css/index.css?v=20260719" />
 </head>
 
 <body>
@@ -39,7 +39,7 @@
         no accounts. Your private keys never leave the tab.
       </p>
       <div class="hero-cta">
-        <a class="btn-primary" href="solwrapper.html">Open SOL Wrapper →</a>
+        <a class="btn-primary" id="rotcta" href="solwrapper.html"><span id="rotcta-label">Open SOL Wrapper →</span></a>
         <a class="btn-ghost" href="#tools">Browse the tools</a>
         <a class="btn-ghost" href="https://github.com/EnderMythex/enderMythex.github.io" target="_blank" rel="noopener">
           <svg viewBox="0 0 16 16" width="15" height="15" fill="currentColor" aria-hidden="true" style="vertical-align:-2px;margin-right:.35rem;">
@@ -170,6 +170,41 @@
     </div>
 
   </div>
+
+  <script>
+    // Rotate the primary CTA through every tool every 2s (pauses on hover/focus
+    // so the shown target stays clickable).
+    (function () {
+      var el = document.getElementById("rotcta");
+      var lbl = document.getElementById("rotcta-label");
+      if (!el || !lbl) return;
+      var items = [
+        { t: "Open SOL Wrapper →", h: "solwrapper.html" },
+        { t: "Open SolWatcher →", h: "solwatcher.html" },
+        { t: "Open Vanity Address →", h: "vanity.html" },
+        { t: "Open Wallet Keys →", h: "walletkeys.html" },
+        { t: "Open ETH Miner →", h: "eth_miner.html" },
+        { t: "Open Solana Miner →", h: "sol_miner.html" }
+      ];
+      var i = 0, paused = false;
+      ["mouseenter", "focus", "touchstart"].forEach(function (e) {
+        el.addEventListener(e, function () { paused = true; });
+      });
+      ["mouseleave", "blur"].forEach(function (e) {
+        el.addEventListener(e, function () { paused = false; });
+      });
+      setInterval(function () {
+        if (paused) return;
+        i = (i + 1) % items.length;
+        lbl.style.opacity = "0";
+        setTimeout(function () {
+          lbl.textContent = items[i].t;
+          el.setAttribute("href", items[i].h);
+          lbl.style.opacity = "1";
+        }, 220);
+      }, 2000);
+    })();
+  </script>
 </body>
 
 </html>
