@@ -34,21 +34,53 @@
 /* ── Controls ────────────────────────────────────────────────────────── */
 .controls {
   display: flex;
-  gap: .6rem;
+  gap: .7rem .9rem;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-end;
 }
 
 .ctl {
-  color: #8a8a98;
-  font-size: .8rem;
   display: inline-flex;
-  gap: .35rem;
-  align-items: center;
+  flex-direction: column;
+  gap: .32rem;
+  color: #8a8a98;
+  font-size: .64rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
 }
 
-input[type=number] {
-  width: 6.5em;
+.ctl input,
+.ctl select {
+  box-sizing: border-box;
+}
+
+.ctl input[type=number] {
+  width: 8em;
+}
+
+.ctl input[type=password] {
+  width: 16em;
+}
+
+.ctl select {
+  width: 12em;
+}
+
+.ctl label {
+  display: inline-flex;
+  align-items: center;
+  gap: .45rem;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: .8rem;
+  color: #aaa;
+  min-height: 2.1rem;
+}
+
+.controls button {
+  height: 2.1rem;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .keyrow {
@@ -296,15 +328,12 @@ input[type=number] {
   }
 
   .ctl {
-    justify-content: space-between;
+    width: 100%;
   }
 
-  .controls input[type=number],
-  .controls input[type=password],
-  .controls select {
-    flex: 1;
-    min-width: 0;
-    box-sizing: border-box;
+  .ctl input,
+  .ctl select {
+    width: 100% !important;
   }
 
   .controls button {

@@ -40,29 +40,54 @@
 
 .controls {
   display: flex;
-  gap: .5rem;
+  gap: .7rem .9rem;
   flex-wrap: wrap;
-  align-items: center;
+  align-items: flex-end;
 }
 
 .ctl {
-  color: #888;
-  font-size: .82rem;
   display: inline-flex;
-  gap: .3rem;
+  flex-direction: column;
+  gap: .32rem;
+  color: #8a8a98;
+  font-size: .64rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.ctl input,
+.ctl select {
+  box-sizing: border-box;
+}
+
+.ctl input[type=text] {
+  width: 12em;
+}
+
+.ctl input[type=number] {
+  width: 6.5em;
+}
+
+.ctl select {
+  width: 15em;
+}
+
+/* checkbox fields stay a single inline row, aligned with the inputs */
+.ctl label {
+  display: inline-flex;
   align-items: center;
+  gap: .45rem;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: .8rem;
+  color: #aaa;
+  min-height: 2.1rem;
 }
 
-input[type=text] {
-  min-width: 9em;
-}
-
-input[type=number] {
-  width: 5em;
-}
-
-select {
-  max-width: 18em;
+.controls button {
+  height: 2.1rem;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 input.bad {
@@ -273,20 +298,16 @@ code {
     align-items: stretch;
   }
 
-  .controls .ctl {
-    justify-content: space-between;
+  .ctl {
+    width: 100%;
+  }
+
+  .ctl input,
+  .ctl select {
+    width: 100% !important;
   }
 
   .controls button {
     width: 100%;
-  }
-
-  select,
-  input[type=text],
-  input[type=number] {
-    flex: 1;
-    min-width: 0;
-    width: 100%;
-    box-sizing: border-box;
   }
 }
