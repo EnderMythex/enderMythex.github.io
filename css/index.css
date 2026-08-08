@@ -1,80 +1,79 @@
-/* index.css */
+/* index.css — 4chan-style flat black */
 #wrap {
-  padding: 5rem 1.5rem 3rem;
+  padding: 3rem 1rem 3rem;
 }
 
 #hero {
-  margin: 2.5rem 0 2.2rem;
+  margin: 1.6rem 0 1.4rem;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.1rem;
+  gap: .9rem;
 }
 
 .hero-badge {
-  color: #b8b0d8;
-  font-size: .68rem;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  padding: .35rem .8rem;
-  border: 1px solid rgba(160, 130, 220, 0.35);
-  background: rgba(140, 110, 210, 0.10);
-  border-radius: 999px;
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-}
-
-.hero-badge::first-letter {
-  color: #8f7de0;
+  color: #789922;
+  font-size: .72rem;
+  padding: .25rem .6rem;
+  border: 1px solid #2b2b2b;
+  background: #0a0a0a;
 }
 
 #hero h1 {
-  font-size: clamp(2rem, 7vw, 3.6rem);
-  font-weight: 700;
-  letter-spacing: -.01em;
-  line-height: 1.05;
+  font-size: clamp(1.7rem, 5vw, 2.6rem);
+  font-weight: bold;
+  line-height: 1.1;
   color: #fff;
   margin: 0;
 }
 
 #hero h1 .grad {
-  background: linear-gradient(100deg, #a78bfa 0%, #7dd3fc 50%, #c084fc 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
+  color: #117743;
 }
 
 #hero p {
-  color: #9a9aa8;
-  font-size: clamp(.85rem, 1.8vw, 1rem);
-  line-height: 1.75;
+  color: #9a9a9a;
+  font-size: clamp(.85rem, 1.6vw, .95rem);
+  line-height: 1.6;
   margin: 0;
-  max-width: 58ch;
+  max-width: 62ch;
 }
 
 .hero-cta {
   display: flex;
-  gap: .7rem;
+  gap: .5rem;
   flex-wrap: wrap;
   justify-content: center;
-  margin-top: .3rem;
+  margin-top: .4rem;
 }
 
 .hero-cta a {
   text-decoration: none;
-  padding: .65rem 1.2rem;
-  border-radius: 11px;
+  padding: .4rem .8rem;
   font-size: .85rem;
-  font-weight: 600;
-  transition: transform .12s ease, box-shadow .15s ease, background .15s, border-color .15s;
+  border: 1px solid #3a3a3a;
+  background: #141414;
+  color: #ddd;
+}
+
+.hero-cta a:hover {
+  background: #1e1e1e;
+  border-color: #5a5a5a;
+  color: #fff;
 }
 
 .hero-cta .btn-primary {
-  background: linear-gradient(180deg, #ffffff, #e6e6ef);
-  color: #000;
-  box-shadow: 0 8px 24px rgba(180, 160, 255, 0.18);
+  background: #1c1c1c;
+  border-color: #4a4a4a;
+  color: #fff;
+  font-weight: bold;
+}
+
+.hero-cta .btn-primary:hover {
+  background: #262626;
+  border-color: #6c9fd6;
+  color: #fff;
 }
 
 #rotcta {
@@ -87,58 +86,38 @@
   transition: opacity .22s ease;
 }
 
-.hero-cta .btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 12px 30px rgba(180, 160, 255, 0.32);
-}
-
-.hero-cta .btn-ghost {
-  color: #d5d5e2;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.03);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-}
-
-.hero-cta .btn-ghost:hover {
-  transform: translateY(-2px);
-  border-color: rgba(255, 255, 255, 0.32);
-  background: rgba(255, 255, 255, 0.07);
-}
-
 .hero-stats {
   display: flex;
-  gap: 1.8rem;
+  gap: 1.4rem;
   flex-wrap: wrap;
   justify-content: center;
-  margin-top: .5rem;
+  margin-top: .4rem;
   color: #666;
   font-size: .74rem;
-  letter-spacing: .04em;
 }
 
 .hero-stats b {
-  color: #cfcfe0;
-  font-size: 1rem;
-  margin-right: .3rem;
+  color: #789922;
+  font-size: .9rem;
+  margin-right: .25rem;
 }
 
 /* ── Auto-scrolling marquee (pauses on hover) ────────────────────────── */
 .marquee {
   position: relative;
   overflow: hidden;
-  margin: .2rem -1.5rem 2rem;
-  padding: .55rem 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
-  mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent);
+  margin: .2rem -1rem 1.6rem;
+  padding: .45rem 0;
+  border-top: 1px solid #1c1c1c;
+  border-bottom: 1px solid #1c1c1c;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
 }
 
 .marquee-track {
   display: inline-flex;
   align-items: center;
-  gap: 1.6rem;
+  gap: 1.4rem;
   white-space: nowrap;
   will-change: transform;
   animation: marquee-left 30s linear infinite;
@@ -155,56 +134,47 @@
 }
 
 .marquee .m-item {
-  color: #c6c6d6;
+  color: #999;
   font-size: .74rem;
-  letter-spacing: .16em;
-  text-transform: uppercase;
 }
 
 .marquee .m-dot {
-  color: #8a6cd0;
+  color: #117743;
   font-size: .6rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .marquee-track {
-    animation: none;
-  }
+  .marquee-track { animation: none; }
 }
 
+/* ── Tool cards ──────────────────────────────────────────────────────── */
 .tools {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: .8rem;
 }
 
 .tool-card {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.025);
-  -webkit-backdrop-filter: blur(12px) saturate(120%);
-  backdrop-filter: blur(12px) saturate(120%);
-  border-radius: 16px;
-  padding: 1.2rem;
+  border: 1px solid #2b2b2b;
+  background: #070707;
+  padding: .9rem 1rem;
   display: flex;
   flex-direction: column;
-  gap: .5rem;
+  gap: .45rem;
   text-decoration: none;
   color: inherit;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 12px 34px rgba(0, 0, 0, 0.4);
-  transition: border-color .2s, transform .2s, box-shadow .2s, background .2s;
+  transition: border-color .1s, background .1s;
 }
 
 .tool-card:hover {
-  border-color: rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.05);
-  transform: translateY(-3px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 44px rgba(0, 0, 0, 0.55);
+  border-color: #4a4a4a;
+  background: #0d0d0d;
 }
 
 .tool-card.testing {
-  opacity: .82;
   border-style: dashed;
-  border-color: rgba(255, 255, 255, 0.12);
+  border-color: #222;
+  opacity: .85;
 }
 
 .tool-card.testing:hover {
@@ -213,54 +183,54 @@
 
 .tool-card .tc-tag {
   color: #666;
-  font-size: .68rem;
-  letter-spacing: .2em;
-  text-transform: uppercase;
+  font-size: .7rem;
   display: flex;
   align-items: center;
   gap: .5rem;
 }
 
 .tc-badge {
-  letter-spacing: .12em;
-  font-size: .62rem;
-  color: #ffcf6a;
-  border: 1px solid rgba(255, 207, 106, 0.45);
-  background: rgba(255, 207, 106, 0.10);
-  border-radius: 999px;
-  padding: .05rem .45rem;
+  font-size: .64rem;
+  color: #cc8800;
+  border: 1px solid #4a3a00;
+  background: #1a1400;
+  padding: .02rem .35rem;
 }
 
 .tool-card .tc-name {
-  color: #fff;
+  color: #117743;
   font-size: 1rem;
-  font-weight: 600;
-  letter-spacing: .06em;
+  font-weight: bold;
+}
+
+.tool-card:hover .tc-name {
+  color: #34a35f;
 }
 
 .tool-card .tc-desc {
-  color: #888;
+  color: #9a9a9a;
   font-size: .8rem;
-  line-height: 1.6;
+  line-height: 1.5;
   flex: 1;
 }
 
 .tool-card .tc-link {
-  color: #aaa;
+  color: #6c9fd6;
   font-size: .78rem;
   margin-top: .3rem;
 }
 
 .tool-card:hover .tc-link {
-  color: #fff;
+  color: #ff2020;
 }
 
+/* ── About panel ─────────────────────────────────────────────────────── */
 .about.panel .row {
   display: grid;
   grid-template-columns: 10em 1fr;
-  gap: .4rem 1rem;
-  font-size: .83rem;
-  line-height: 1.7;
+  gap: .3rem 1rem;
+  font-size: .82rem;
+  line-height: 1.6;
 }
 
 .about.panel .k {
@@ -268,36 +238,25 @@
 }
 
 .about.panel .v {
-  color: #aaa;
+  color: #bbb;
 }
 
 @media (max-width: 560px) {
   #wrap {
-    padding: 3.5rem 1rem 2rem;
+    padding: 3rem .8rem 2rem;
   }
 
   .tools {
     grid-template-columns: 1fr;
   }
 
-  #hero {
-    margin: 1.5rem 0 1.8rem;
-  }
-
   #hero h1 {
-    font-size: clamp(1.7rem, 8.5vw, 2.4rem);
-    letter-spacing: -.02em;
+    font-size: clamp(1.6rem, 8vw, 2.2rem);
   }
 
-  #hero p {
-    font-size: .85rem;
-  }
-
-  /* match the marquee full-bleed to the mobile #wrap padding (1rem) so it
-     doesn't push past the viewport */
   .marquee {
-    margin-left: -1rem;
-    margin-right: -1rem;
+    margin-left: -.8rem;
+    margin-right: -.8rem;
   }
 
   .hero-cta {
@@ -309,18 +268,7 @@
     text-align: center;
   }
 
-  .hero-stats {
-    gap: 1rem;
-    font-size: .7rem;
-  }
-
   .about.panel .row {
     grid-template-columns: 1fr;
-  }
-
-  .about.panel .k {
-    color: #555;
-    font-size: .72rem;
-    margin-top: .3rem;
   }
 }

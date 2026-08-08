@@ -16,11 +16,7 @@
 }
 
 .watch-hero .grad {
-  background: linear-gradient(100deg, #a78bfa, #7dd3fc 55%, #c084fc);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
+  color: #117743;
 }
 
 .watch-hero p {
@@ -169,31 +165,19 @@
   color: #777;
   font-size: .85rem;
   padding: 2.5rem 1rem;
-  border: 1px dashed rgba(255, 255, 255, 0.12);
-  border-radius: 16px;
+  border: 1px dashed #2b2b2b;
 }
 
 .coin {
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.025);
-  -webkit-backdrop-filter: blur(12px) saturate(120%);
-  backdrop-filter: blur(12px) saturate(120%);
-  border-radius: 16px;
-  padding: .9rem 1rem;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 10px 28px rgba(0, 0, 0, 0.4);
-  transition: transform .18s, border-color .18s, box-shadow .18s;
-  animation: coin-in .25s ease both;
-}
-
-@keyframes coin-in {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  border: 1px solid #2b2b2b;
+  background: #070707;
+  padding: .8rem 1rem;
+  transition: border-color .1s, background .1s;
 }
 
 .coin:hover {
-  transform: translateY(-3px);
-  border-color: rgba(255, 255, 255, 0.2);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 16px 40px rgba(0, 0, 0, 0.55);
+  border-color: #4a4a4a;
+  background: #0d0d0d;
 }
 
 .coin-head {
@@ -211,9 +195,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #8a6cd0;
+  background: #111;
+  border: 1px solid #333;
+  color: #117743;
   font-size: 1rem;
 }
 
@@ -251,8 +235,8 @@
 }
 
 .coin-mcap-v {
-  color: #a78bfa;
-  font-weight: 700;
+  color: #117743;
+  font-weight: bold;
   font-size: 1rem;
 }
 

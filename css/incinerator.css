@@ -16,11 +16,7 @@
 }
 
 .watch-hero .grad {
-  background: linear-gradient(100deg, #ff9d5c, #ffcf6a 55%, #ff6b6b);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
+  color: #cc6600;
 }
 
 .watch-hero p {
@@ -116,22 +112,21 @@
   grid-template-columns: 1.4rem 1fr auto auto;
   align-items: center;
   gap: .8rem;
-  padding: .55rem .7rem;
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.02);
+  padding: .5rem .6rem;
+  border: 1px solid #2b2b2b;
+  background: #070707;
   cursor: pointer;
   font-size: .82rem;
-  transition: border-color .15s, background .15s;
+  transition: border-color .1s, background .1s;
 }
 
 .acc:hover {
-  border-color: rgba(255, 255, 255, 0.18);
-  background: rgba(255, 255, 255, 0.045);
+  border-color: #4a4a4a;
+  background: #0d0d0d;
 }
 
 .acc.hasbal {
-  border-color: rgba(255, 107, 107, 0.28);
+  border-color: #5a2020;
 }
 
 .acc input {
