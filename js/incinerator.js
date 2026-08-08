@@ -11,7 +11,6 @@ const RPCS = {
   "mainnet-beta": "https://solana-rpc.publicnode.com",
   devnet: "https://api.devnet.solana.com",
 };
-const PER_TX = 6; // accounts per transaction (burn+close stays under the size limit)
 
 const $ = (id) => document.getElementById(id);
 let connection = null;
@@ -113,6 +112,9 @@ async function scan() {
         });
       });
     }
+    // never list the same token account twice (closing it twice fails)
+    const seen = new Set();
+    accounts = accounts.filter((a) => (seen.has(a.pubkey) ? false : seen.add(a.pubkey)));
     renderList();
   } catch (e) {
     setStatus("Scan failed: " + (e.message || e), "err");
@@ -188,7 +190,10 @@ async function incinerate() {
     const { PublicKey, Transaction } = window.solanaWeb3;
     const conn = getConnection();
     const owner = new PublicKey(walletAddr);
-    const groups = chunk(sel, PER_TX);
+    // close-only accounts are tiny → pack many per tx (fewer tx = Phantom can
+    // simulate and show the safe preview). Burns are bigger, so use small groups.
+    const per = willBurn.length ? 5 : 12;
+    const groups = chunk(sel, per);
     const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash("confirmed");
 
     const txs = groups.map((g) => {
