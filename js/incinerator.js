@@ -86,19 +86,57 @@ function chunk(arr, n) {
   return out;
 }
 
-// A read-only connection for the heavy getProgramAccounts scan. Custom RPCs
-// (e.g. Helius free tier) often 429 on getParsedTokenAccountsByOwner, so if the
-// chosen RPC fails we fall back to the public one — which handles reads fine.
-let fallbackConn = null;
-async function fetchTokenAccounts(owner, pid) {
-  const { PublicKey, Connection } = window.solanaWeb3;
-  const prog = new PublicKey(pid);
-  try {
-    return await getConnection().getParsedTokenAccountsByOwner(owner, { programId: prog });
-  } catch (e) {
-    if (!fallbackConn) fallbackConn = new Connection(RPCS["mainnet-beta"], "confirmed");
-    return await fallbackConn.getParsedTokenAccountsByOwner(owner, { programId: prog });
+const RENT_TOKEN_ACCOUNT = 2039280; // lamports for a standard 165-byte SPL token account
+
+// Helius DAS getTokenAccounts — lightweight, works on the free tier and returns
+// every token account (both programs, incl. empty) paginated. Avoids the heavy
+// getTokenAccountsByOwner / getProgramAccounts that public RPCs block.
+async function fetchHelius(owner, url) {
+  const out = [];
+  for (let page = 1; page <= 20; page++) {
+    const body = JSON.stringify({
+      jsonrpc: "2.0", id: "inc", method: "getTokenAccounts",
+      params: { owner, page, limit: 1000, options: { showZeroBalance: true } },
+    });
+    const r = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body });
+    if (!r.ok) throw new Error("Helius HTTP " + r.status);
+    const j = await r.json();
+    if (j.error) throw new Error(j.error.message || "Helius error");
+    const list = (j.result && j.result.token_accounts) || [];
+    list.forEach((t) => out.push({
+      pubkey: t.address,
+      mint: t.mint,
+      amountRaw: String(t.amount != null ? t.amount : "0"),
+      decimals: 0,
+      uiAmount: Number(t.amount) || 0,
+      lamports: RENT_TOKEN_ACCOUNT,
+      pid: t.token_program || TOKEN_PROGRAM,
+    }));
+    if (list.length < 1000) break;
   }
+  return out;
+}
+
+// Standard path (works only on RPCs that allow getTokenAccountsByOwner).
+async function fetchStandard(owner) {
+  const { PublicKey } = window.solanaWeb3;
+  const out = [];
+  for (const pid of [TOKEN_PROGRAM, TOKEN_2022]) {
+    const res = await getConnection().getParsedTokenAccountsByOwner(owner, { programId: new PublicKey(pid) });
+    res.value.forEach((v) => {
+      const info = v.account.data.parsed.info;
+      out.push({
+        pubkey: v.pubkey.toString(),
+        mint: info.mint,
+        amountRaw: info.tokenAmount.amount,
+        decimals: info.tokenAmount.decimals,
+        uiAmount: info.tokenAmount.uiAmount || 0,
+        lamports: v.account.lamports || 0,
+        pid,
+      });
+    });
+  }
+  return out;
 }
 
 // ── Scan ───────────────────────────────────────────────────────────────
@@ -107,37 +145,16 @@ async function scan() {
     if (!walletAddr) await connectWallet();
     const { PublicKey } = window.solanaWeb3;
     const owner = new PublicKey(walletAddr);
+    const url = currentRpc();
     setStatus("Scanning your token accounts…");
-    accounts = [];
-    let failed = false;
-    for (const pid of [TOKEN_PROGRAM, TOKEN_2022]) {
-      let res;
-      try { res = await fetchTokenAccounts(owner, pid); }
-      catch (e) { failed = true; continue; }
-      res.value.forEach((v) => {
-        const info = v.account.data.parsed.info;
-        accounts.push({
-          pubkey: v.pubkey.toString(),
-          mint: info.mint,
-          amountRaw: info.tokenAmount.amount,
-          decimals: info.tokenAmount.decimals,
-          uiAmount: info.tokenAmount.uiAmount || 0,
-          lamports: v.account.lamports || 0,
-          pid,
-        });
-      });
-    }
+    accounts = /helius/i.test(url) ? await fetchHelius(walletAddr, url) : await fetchStandard(owner);
     // never list the same token account twice (closing it twice fails)
     const seen = new Set();
     accounts = accounts.filter((a) => (seen.has(a.pubkey) ? false : seen.add(a.pubkey)));
-    if (!accounts.length && failed) {
-      setStatus("RPC error while scanning (rate-limited?). Clear the custom RPC to use the public one, or try again.", "err");
-      renderList();
-      return;
-    }
     renderList();
   } catch (e) {
-    setStatus("Scan failed: " + (e.message || e), "err");
+    setStatus("Scan failed: " + (e.message || e) +
+      " — public RPCs block token-account scans. Paste a free Helius RPC URL in custom rpc (it uses a lighter method that works).", "err");
   }
 }
 
