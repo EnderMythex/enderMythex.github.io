@@ -209,19 +209,46 @@ async function incinerate() {
 
     setStatus("Approve in Phantom — " + txs.length + " transaction(s)…");
     const signed = await window.solana.signAllTransactions(txs);
-    let done = 0;
-    for (const s of signed) {
-      const sig = await conn.sendRawTransaction(s.serialize());
-      await conn.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight }, "confirmed");
-      done++;
-      setStatus("Confirmed " + done + "/" + signed.length + "…");
+    let ok = 0, pending = 0, errored = 0;
+    for (let i = 0; i < signed.length; i++) {
+      const sig = await conn.sendRawTransaction(signed[i].serialize());
+      setStatus("Sent " + (i + 1) + "/" + signed.length + " (" + sig.slice(0, 8) + "…) — confirming…");
+      const res = await pollConfirm(sig);
+      if (res.state === "ok") ok++;
+      else if (res.state === "err") errored++;
+      else pending++;
     }
     const rent = sel.reduce((s, a) => s + a.lamports, 0) / LAMPORTS_PER_SOL;
-    setStatus("✔ Closed " + sel.length + " account(s) · reclaimed ~" + rent.toFixed(5) + " SOL back to your wallet.", "ok");
+    if (errored) {
+      setStatus("Done with errors: " + ok + " ok, " + errored + " failed. Re-scan to see what remains.", "err");
+    } else if (pending) {
+      setStatus("Submitted — still confirming (slow RPC). Your balance will update; re-scan in a moment. Reclaiming ~" + rent.toFixed(5) + " SOL.", "");
+    } else {
+      setStatus("✔ Closed " + sel.length + " account(s) · reclaimed ~" + rent.toFixed(5) + " SOL back to your wallet.", "ok");
+    }
     await scan();
   } catch (e) {
     setStatus("Failed: " + (e.message || e), "err");
   }
+}
+
+// Poll signature status instead of confirmTransaction (which throws
+// "block height exceeded" on slow public RPCs even when the tx landed).
+async function pollConfirm(signature, timeoutMs = 45000) {
+  const conn = getConnection();
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const res = await conn.getSignatureStatuses([signature], { searchTransactionHistory: true });
+      const st = res && res.value && res.value[0];
+      if (st) {
+        if (st.err) return { state: "err", err: st.err };
+        if (st.confirmationStatus === "confirmed" || st.confirmationStatus === "finalized") return { state: "ok" };
+      }
+    } catch (e) { /* transient — keep polling */ }
+    await new Promise((r) => setTimeout(r, 1500));
+  }
+  return { state: "pending" };
 }
 
 // ── Wire up ────────────────────────────────────────────────────────────
