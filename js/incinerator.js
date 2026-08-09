@@ -86,19 +86,34 @@ function chunk(arr, n) {
   return out;
 }
 
+// A read-only connection for the heavy getProgramAccounts scan. Custom RPCs
+// (e.g. Helius free tier) often 429 on getParsedTokenAccountsByOwner, so if the
+// chosen RPC fails we fall back to the public one — which handles reads fine.
+let fallbackConn = null;
+async function fetchTokenAccounts(owner, pid) {
+  const { PublicKey, Connection } = window.solanaWeb3;
+  const prog = new PublicKey(pid);
+  try {
+    return await getConnection().getParsedTokenAccountsByOwner(owner, { programId: prog });
+  } catch (e) {
+    if (!fallbackConn) fallbackConn = new Connection(RPCS["mainnet-beta"], "confirmed");
+    return await fallbackConn.getParsedTokenAccountsByOwner(owner, { programId: prog });
+  }
+}
+
 // ── Scan ───────────────────────────────────────────────────────────────
 async function scan() {
   try {
     if (!walletAddr) await connectWallet();
     const { PublicKey } = window.solanaWeb3;
-    const conn = getConnection();
     const owner = new PublicKey(walletAddr);
     setStatus("Scanning your token accounts…");
     accounts = [];
+    let failed = false;
     for (const pid of [TOKEN_PROGRAM, TOKEN_2022]) {
       let res;
-      try { res = await conn.getParsedTokenAccountsByOwner(owner, { programId: new PublicKey(pid) }); }
-      catch (e) { continue; }
+      try { res = await fetchTokenAccounts(owner, pid); }
+      catch (e) { failed = true; continue; }
       res.value.forEach((v) => {
         const info = v.account.data.parsed.info;
         accounts.push({
@@ -115,6 +130,11 @@ async function scan() {
     // never list the same token account twice (closing it twice fails)
     const seen = new Set();
     accounts = accounts.filter((a) => (seen.has(a.pubkey) ? false : seen.add(a.pubkey)));
+    if (!accounts.length && failed) {
+      setStatus("RPC error while scanning (rate-limited?). Clear the custom RPC to use the public one, or try again.", "err");
+      renderList();
+      return;
+    }
     renderList();
   } catch (e) {
     setStatus("Scan failed: " + (e.message || e), "err");
