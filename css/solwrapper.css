@@ -83,19 +83,19 @@
 }
 
 .hint.ok {
-  color: #9f9;
+  color: #fff;
 }
 
 .hint.err {
-  color: #f77;
+  color: #fff;
 }
 
 code {
-  color: #9cf;
+  color: #ddd;
 }
 
 #w_status {
-  color: #9f9;
+  color: #fff;
   min-height: 1.4em;
   font-size: .8rem;
   margin-top: .7rem;
@@ -103,11 +103,11 @@ code {
 }
 
 #w_status.err {
-  color: #f77;
+  color: #fff;
 }
 
 #w_status.ok {
-  color: #9f9;
+  color: #fff;
 }
 
 textarea.io {
@@ -125,7 +125,7 @@ textarea.io {
 }
 
 textarea.io[readonly] {
-  color: #fc6;
+  color: #ddd;
   background: #0a0a0a;
 }
 
@@ -137,7 +137,7 @@ button.ghost {
 
 #btn_unwrap {
   background: #1a1a1a;
-  color: #9cf;
+  color: #ddd;
   border: 1px solid #336;
 }
 

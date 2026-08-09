@@ -16,7 +16,7 @@
 }
 
 .watch-hero .grad {
-  color: #117743;
+  color: #ffffff;
 }
 
 .watch-hero p {
@@ -90,7 +90,7 @@
 }
 
 .keyrow .getkey {
-  color: #9cf;
+  color: #ddd;
   font-size: .74rem;
   text-decoration: none;
 }
@@ -113,11 +113,11 @@
 }
 
 #status.ok {
-  color: #8ee6a8;
+  color: #ffffff;
 }
 
 #status.err {
-  color: #ff8080;
+  color: #ffffff;
 }
 
 .summary {
@@ -148,7 +148,7 @@
 }
 
 .hint a {
-  color: #9cf;
+  color: #ddd;
 }
 
 /* ── Grid of coins ───────────────────────────────────────────────────── */
@@ -197,7 +197,7 @@
   justify-content: center;
   background: #111;
   border: 1px solid #333;
-  color: #117743;
+  color: #ffffff;
   font-size: 1rem;
 }
 
@@ -235,7 +235,7 @@
 }
 
 .coin-mcap-v {
-  color: #117743;
+  color: #ffffff;
   font-weight: bold;
   font-size: 1rem;
 }
@@ -273,8 +273,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-.cs-v.up { color: #57d98a; }
-.cs-v.down { color: #ff6b6b; }
+.cs-v.up { color: #ffffff; }
+.cs-v.down { color: #999999; }
 .cs-v.flat { color: #999; }
 
 .coin-links {
@@ -286,13 +286,13 @@
 }
 
 .coin-links a {
-  color: #8fb8ff;
+  color: #dddddd;
   font-size: .7rem;
   text-decoration: none;
 }
 
 .coin-links a:hover {
-  color: #cfe0ff;
+  color: #fff;
   text-decoration: underline;
 }
 

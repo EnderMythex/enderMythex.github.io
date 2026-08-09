@@ -1,0 +1,171 @@
+/* tracker.css — black & white */
+#wrap {
+  padding: 2.5rem 1rem 3rem;
+}
+
+.watch-hero {
+  margin: 1.4rem 0 1.4rem;
+}
+
+.watch-hero h1 {
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  font-weight: bold;
+  color: #fff;
+  margin: 0 0 .5rem;
+}
+
+.watch-hero p {
+  color: #9a9a9a;
+  font-size: clamp(.85rem, 1.6vw, .95rem);
+  line-height: 1.6;
+  max-width: 66ch;
+  margin: 0;
+}
+
+#status {
+  min-height: 1.3em;
+  margin-top: .7rem;
+  font-size: .8rem;
+  color: #aaa;
+  word-break: break-word;
+}
+
+#status.ok { color: #fff; }
+#status.err { color: #fff; font-weight: bold; }
+
+.summary {
+  display: flex;
+  gap: .4rem 1.4rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: .7rem;
+  font-size: .8rem;
+}
+
+.summary .k {
+  color: #777;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  font-size: .66rem;
+}
+
+.summary .v {
+  color: #fff;
+  font-weight: bold;
+  margin-right: .6rem;
+}
+
+.headline {
+  font-size: .9rem;
+  color: #ddd;
+  padding: .6rem .7rem;
+  border: 1px solid #2b2b2b;
+  background: #0c0c0c;
+  margin-bottom: .8rem;
+  min-height: 1em;
+  word-break: break-word;
+}
+
+.headline:empty { display: none; }
+
+.hint {
+  color: #888;
+  font-size: .78rem;
+  line-height: 1.7;
+}
+
+.empty {
+  text-align: center;
+  color: #777;
+  font-size: .85rem;
+  padding: 2rem 1rem;
+  border: 1px dashed #2b2b2b;
+}
+
+/* ── Destination rows ────────────────────────────────────────────────── */
+#list {
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+
+.dest {
+  display: grid;
+  grid-template-columns: 1.8rem 1fr auto;
+  align-items: center;
+  gap: .8rem;
+  padding: .5rem .6rem;
+  border: 1px solid #2b2b2b;
+  background: #070707;
+}
+
+.dest:hover {
+  border-color: #4a4a4a;
+  background: #0d0d0d;
+}
+
+.d-rank {
+  color: #666;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.d-addr {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+}
+
+.d-addr a {
+  color: #fff;
+  font-family: Consolas, monospace;
+}
+
+.d-meta {
+  color: #777;
+  font-size: .7rem;
+}
+
+.d-bar {
+  display: block;
+  height: 4px;
+  background: #1a1a1a;
+  margin-top: .1rem;
+}
+
+.d-bar span {
+  display: block;
+  height: 100%;
+  background: #fff;
+}
+
+.d-sol {
+  text-align: right;
+  color: #fff;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.d-pct {
+  display: block;
+  color: #888;
+  font-weight: normal;
+  font-size: .72rem;
+}
+
+@media (max-width: 760px) {
+  #wrap {
+    padding: 3.5rem .8rem 2rem;
+  }
+
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .ctl { width: 100%; }
+  .ctl input { width: 100% !important; box-sizing: border-box; }
+  .controls button { width: 100%; }
+}

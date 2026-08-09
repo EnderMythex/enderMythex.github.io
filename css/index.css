@@ -13,7 +13,7 @@
 }
 
 .hero-badge {
-  color: #789922;
+  color: #aaaaaa;
   font-size: .72rem;
   padding: .25rem .6rem;
   border: 1px solid #2b2b2b;
@@ -29,7 +29,7 @@
 }
 
 #hero h1 .grad {
-  color: #117743;
+  color: #ffffff;
 }
 
 #hero p {
@@ -72,7 +72,7 @@
 
 .hero-cta .btn-primary:hover {
   background: #262626;
-  border-color: #6c9fd6;
+  border-color: #dddddd;
   color: #fff;
 }
 
@@ -97,7 +97,7 @@
 }
 
 .hero-stats b {
-  color: #789922;
+  color: #aaaaaa;
   font-size: .9rem;
   margin-right: .25rem;
 }
@@ -139,7 +139,7 @@
 }
 
 .marquee .m-dot {
-  color: #117743;
+  color: #ffffff;
   font-size: .6rem;
 }
 
@@ -191,20 +191,20 @@
 
 .tc-badge {
   font-size: .64rem;
-  color: #cc8800;
-  border: 1px solid #4a3a00;
-  background: #1a1400;
+  color: #aaa;
+  border: 1px solid #444;
+  background: #161616;
   padding: .02rem .35rem;
 }
 
 .tool-card .tc-name {
-  color: #117743;
+  color: #ffffff;
   font-size: 1rem;
   font-weight: bold;
 }
 
 .tool-card:hover .tc-name {
-  color: #34a35f;
+  color: #cccccc;
 }
 
 .tool-card .tc-desc {
@@ -215,13 +215,13 @@
 }
 
 .tool-card .tc-link {
-  color: #6c9fd6;
+  color: #dddddd;
   font-size: .78rem;
   margin-top: .3rem;
 }
 
 .tool-card:hover .tc-link {
-  color: #ff2020;
+  color: #fff;
 }
 
 /* ── About panel ─────────────────────────────────────────────────────── */

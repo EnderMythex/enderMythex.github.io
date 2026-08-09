@@ -24,18 +24,18 @@
 }
 
 #status {
-  color: #9f9;
+  color: #fff;
   min-height: 1.4em;
   font-size: .85rem;
   margin-top: .6rem;
 }
 
 .warn {
-  color: #fc6;
+  color: #ddd;
 }
 
 .err {
-  color: #f77;
+  color: #fff;
 }
 
 .controls {
@@ -101,7 +101,7 @@ input.bad {
 }
 
 code {
-  color: #9cf;
+  color: #ddd;
 }
 
 #log {
@@ -122,15 +122,15 @@ code {
 }
 
 #log .adr {
-  color: #9ad;
+  color: #ddd;
 }
 
 #log .near {
-  color: #fc6;
+  color: #ddd;
 }
 
 #log .hit {
-  color: #9f9;
+  color: #fff;
   font-weight: 600;
 }
 
@@ -152,12 +152,12 @@ code {
 }
 
 #results .addr {
-  color: #9f9;
+  color: #fff;
   word-break: break-all;
 }
 
 #results .priv {
-  color: #fc6;
+  color: #ddd;
   word-break: break-all;
   font-size: .76rem;
   margin-top: .2rem;
@@ -182,7 +182,7 @@ code {
 
 .qr-btn {
   background: #1a1a1a;
-  color: #9cf;
+  color: #ddd;
   border: 1px solid #336;
   padding: .12rem .35rem;
   font-family: inherit;
@@ -226,7 +226,7 @@ code {
 }
 
 #qr-box .qr-addr {
-  color: #9f9;
+  color: #fff;
   font-size: .78rem;
   word-break: break-all;
   margin-bottom: 1rem;
@@ -253,7 +253,7 @@ code {
 }
 
 #qr-key {
-  color: #fc6;
+  color: #ddd;
   font-size: .72rem;
   word-break: break-all;
   line-height: 1.5;

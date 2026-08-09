@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Wallet Tracker — follow where a wallet sent its funds</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="css/global.css?v=20260726" />
+  <link rel="stylesheet" href="css/tracker.css?v=20260726" />
+</head>
+
+<body>
+  <nav id="nav">
+    <span class="brand">solana toolkit</span>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle">
+    <label for="nav-toggle" class="nav-burger" aria-label="Toggle menu"><span></span><span></span><span></span></label>
+    <a href="index.html">home</a>
+    <a href="solwatcher.html">solwatcher</a>
+    <a href="vanity.html">vanity solana</a>
+    <a href="solwrapper.html">sol wrapper</a>
+    <a href="walletkeys.html">wallet keys</a>
+    <a href="incinerator.html">incinerator</a>
+    <a href="tracker.html" class="active">wallet tracker</a>
+    <div class="nav-dd" tabindex="0">
+      <span class="nav-dd-toggle">testing ▾</span>
+      <div class="nav-dd-menu">
+        <a href="eth_miner.html">eth miner</a>
+        <a href="sol_miner.html">sol miner</a>
+      </div>
+    </div>
+  </nav>
+
+  <div id="wrap">
+
+    <div class="watch-hero">
+      <h1>Wallet Tracker</h1>
+      <p>Follow the money — scan a Solana wallet's history and see <b>where it sent the biggest part
+        of its funds</b>, ranked by total SOL out per destination.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Track a wallet</div>
+      <div class="controls">
+        <span class="ctl">wallet address
+          <input id="in_addr" type="text" placeholder="paste any Solana wallet address…" autocomplete="off">
+        </span>
+        <span class="ctl">Helius API key
+          <input id="in_key" type="password" placeholder="Helius key or RPC URL" autocomplete="off">
+        </span>
+        <span class="ctl">pages ×100 tx
+          <input id="in_pages" type="number" min="1" max="20" step="1" value="5">
+        </span>
+        <button id="btn_track">↳ track</button>
+      </div>
+      <div id="status"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Where the funds went</div>
+      <div class="summary">
+        <span class="k">scanned tx</span><span class="v" id="s_scanned">—</span>
+        <span class="k">total out</span><span class="v" id="s_out">—</span>
+        <span class="k">total in</span><span class="v" id="s_in">—</span>
+        <span class="k">destinations</span><span class="v" id="s_dest">—</span>
+      </div>
+      <div id="headline" class="headline"></div>
+      <div id="list">
+        <div class="empty">Enter a wallet + your Helius key, then track to see its top SOL destinations.</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="hint">
+        Data from the <a href="https://www.helius.dev/" target="_blank" rel="noopener">Helius</a> Enhanced
+        Transactions API (parsed transfers) — paste a free Helius key or your full RPC URL; it's stored only in your
+        browser. This aggregates <b>native SOL</b> transfers leaving the wallet, grouped by destination (a big top
+        destination is often a CEX deposit, a bridge, or another wallet the owner controls). Scan more pages to go
+        further back. Token-only movements are counted but not valued. Read-only — no wallet connection, DYOR.
+      </div>
+    </div>
+
+  </div>
+
+  <script src="js/tracker.js?v=20260726"></script>
+</body>
+
+</html>
