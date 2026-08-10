@@ -17,6 +17,17 @@ body {
   line-height: 1.45;
 }
 
+/* custom text selection — inverted, on-theme black & white */
+::selection {
+  background: #fff;
+  color: #000;
+}
+
+::-moz-selection {
+  background: #fff;
+  color: #000;
+}
+
 a {
   color: #eee;
   text-decoration: none;
