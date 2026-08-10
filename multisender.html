@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Multisender — send SOL / tokens to many wallets</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="css/global.css?v=20260728" />
+  <link rel="stylesheet" href="css/multisender.css?v=20260728" />
+</head>
+
+<body>
+  <nav id="nav">
+    <span class="brand">solana toolkit</span>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle">
+    <label for="nav-toggle" class="nav-burger" aria-label="Toggle menu"><span></span><span></span><span></span></label>
+    <a href="index.html">home</a>
+    <a href="solwatcher.html">solwatcher</a>
+    <a href="vanity.html">vanity solana</a>
+    <a href="solwrapper.html">sol wrapper</a>
+    <a href="walletkeys.html">wallet keys</a>
+    <a href="incinerator.html">incinerator</a>
+    <a href="tracker.html">wallet tracker</a>
+    <a href="portfolio.html">portfolio</a>
+    <a href="multisender.html" class="active">multisender</a>
+    <a href="devtools.html">dev tools</a>
+    <div class="nav-dd" tabindex="0">
+      <span class="nav-dd-toggle">testing ▾</span>
+      <div class="nav-dd-menu">
+        <a href="eth_miner.html">eth miner</a>
+        <a href="sol_miner.html">sol miner</a>
+      </div>
+    </div>
+  </nav>
+
+  <div id="wrap">
+    <div class="watch-hero">
+      <h1>Multisender</h1>
+      <p>Send SOL or any SPL token to a whole list of addresses at once — batched into as few
+        transactions as possible, signed with Phantom. Missing token accounts are created automatically.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Wallet &amp; asset</div>
+      <div class="controls">
+        <button id="btn_connect">connect Phantom</button>
+        <span class="ctl">network
+          <select id="sel_net">
+            <option value="mainnet-beta" selected>mainnet-beta</option>
+            <option value="devnet">devnet</option>
+          </select>
+        </span>
+        <span class="ctl">custom rpc
+          <input id="in_rpc" type="text" placeholder="(optional) https://your-rpc…" autocomplete="off">
+        </span>
+        <span class="ctl">asset
+          <select id="sel_asset">
+            <option value="sol" selected>SOL</option>
+            <option value="token">SPL token</option>
+          </select>
+        </span>
+        <span class="ctl" id="mint_row" style="display:none;">token mint
+          <input id="in_mint" type="text" placeholder="mint address" autocomplete="off">
+        </span>
+      </div>
+      <div class="row"><span class="k">wallet</span><span class="v" id="s_wallet">—</span></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Recipients (one per line: address,amount)</div>
+      <textarea id="in_csv" class="io" rows="8" placeholder="7xKr…abcd, 0.1&#10;9mNp…wxyz, 0.25&#10;…"></textarea>
+      <div class="controls" style="margin-top:.6rem;">
+        <button id="btn_preview" class="ghost">preview</button>
+        <button id="btn_send">↳ send to all</button>
+      </div>
+      <div id="status"></div>
+    </div>
+
+    <div class="panel">
+      <div class="hint">
+        ⚠ This sends <b>real funds</b> and is irreversible — always <b>preview</b> first and read the Phantom
+        transaction. SOL packs ~12 transfers per tx; tokens ~5 (each may create the recipient's token account,
+        which costs you ~0.002 SOL rent per new account). Amounts are in whole SOL / token units.
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { Buffer } from "https://esm.sh/buffer@6.0.3";
+    window.Buffer = window.Buffer || Buffer;
+    window.global = window.global || window;
+  </script>
+  <script src="https://unpkg.com/@solana/web3.js@1.95.8/lib/index.iife.min.js"></script>
+  <script src="js/multisender.js?v=20260728"></script>
+</body>
+
+</html>

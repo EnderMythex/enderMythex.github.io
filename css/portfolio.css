@@ -1,0 +1,53 @@
+/* portfolio.css — black & white */
+#wrap { padding: 2.5rem 1rem 3rem; }
+
+.watch-hero { margin: 1.4rem 0 1.4rem; }
+.watch-hero h1 { font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: bold; color: #fff; margin: 0 0 .5rem; }
+.watch-hero p { color: #9a9a9a; font-size: clamp(.85rem, 1.6vw, .95rem); line-height: 1.6; max-width: 64ch; margin: 0; }
+
+#status { min-height: 1.3em; margin-top: .7rem; font-size: .8rem; color: #aaa; word-break: break-word; }
+#status.ok { color: #fff; }
+#status.err { color: #fff; font-weight: bold; }
+
+.summary { display: flex; gap: .4rem 1.4rem; flex-wrap: wrap; align-items: center; margin-bottom: .8rem; font-size: .8rem; }
+.summary .k { color: #777; text-transform: uppercase; letter-spacing: .1em; font-size: .66rem; }
+.summary .v { color: #fff; font-weight: bold; margin-right: .6rem; }
+
+.hint { color: #888; font-size: .78rem; line-height: 1.7; }
+.empty { text-align: center; color: #777; font-size: .85rem; padding: 2rem 1rem; border: 1px dashed #2b2b2b; }
+
+.hold {
+  display: grid;
+  grid-template-columns: 1.4fr .9fr .9fr .9fr;
+  gap: .6rem;
+  align-items: center;
+  padding: .45rem .6rem;
+  border-bottom: 1px solid #161616;
+  font-size: .82rem;
+}
+
+.hold-head {
+  color: #777;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  font-size: .64rem;
+  border-bottom: 1px solid #2b2b2b;
+}
+
+.h-sym { color: #fff; font-weight: bold; display: flex; flex-direction: column; gap: .1rem; }
+.h-mint { font-weight: normal; }
+.h-mint a { color: #777; font-size: .68rem; font-family: Consolas, monospace; }
+.h-bal, .h-price, .h-val { text-align: right; font-variant-numeric: tabular-nums; }
+.h-bal { color: #ddd; }
+.h-price { color: #999; }
+.h-val { color: #fff; font-weight: bold; }
+
+@media (max-width: 760px) {
+  #wrap { padding: 3.5rem .8rem 2rem; }
+  .controls { flex-direction: column; align-items: stretch; }
+  .ctl { width: 100%; }
+  .ctl input { width: 100% !important; box-sizing: border-box; }
+  .controls button { width: 100%; }
+  .hold { grid-template-columns: 1.2fr .8fr .8fr; }
+  .hold .h-price { display: none; }
+}

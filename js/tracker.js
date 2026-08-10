@@ -51,6 +51,7 @@ async function track() {
     const outCount = new Map();  // dest -> tx count
     const outLast = new Map();   // dest -> last timestamp
     const tokenOut = new Map();  // dest -> token-transfer count
+    const sources = new Set();   // platforms Helius recognised (JUPITER, PUMP_FUN…)
     let inSol = 0, totalOut = 0, scanned = 0, before = null;
 
     for (let p = 0; p < pages; p++) {
@@ -59,6 +60,7 @@ async function track() {
       if (!txs.length) break;
       for (const tx of txs) {
         scanned++;
+        if (tx.source && tx.source !== "SYSTEM_PROGRAM" && tx.source !== "UNKNOWN") sources.add(tx.source);
         (tx.nativeTransfers || []).forEach((t) => {
           if (t.fromUserAccount === addr && t.toUserAccount && t.toUserAccount !== addr) {
             const amt = Number(t.amount) || 0;
@@ -81,7 +83,7 @@ async function track() {
       if (txs.length < 100) break;
     }
 
-    render(addr, { outSol, outCount, outLast, tokenOut, inSol, totalOut, scanned });
+    render(addr, { outSol, outCount, outLast, tokenOut, inSol, totalOut, scanned, sources });
   } catch (e) {
     setStatus("Failed: " + (e.message || e), "err");
   } finally {
@@ -108,21 +110,35 @@ function render(addr, d) {
     return;
   }
 
+  // heuristic: a destination hit many times with tiny average transfers is
+  // almost always a trading-bot / fee wallet (bots take a small SOL fee per trade)
+  const isBot = (r) => r.count >= 5 && (r.lam / r.count) < 0.05 * LAMPORTS_PER_SOL;
+  rows.forEach((r) => { r.bot = isBot(r); });
+
   const top = rows[0];
   const topPct = d.totalOut ? (top.lam / d.totalOut * 100) : 0;
-  $("headline").innerHTML =
-    `Biggest destination: <a href="https://solscan.io/account/${top.dest}" target="_blank" rel="noopener">${shortAddr(top.dest)}</a> — ` +
+  const platforms = [...(d.sources || [])];
+  const bots = rows.filter((r) => r.bot).sort((a, b) => b.count - a.count);
+
+  let head = `Biggest destination: <a href="https://solscan.io/account/${top.dest}" target="_blank" rel="noopener">${shortAddr(top.dest)}</a> — ` +
     `<b>${fmtSol(top.lam)} SOL</b> (${topPct.toFixed(1)}% of all outgoing SOL).`;
+  if (platforms.length) head += `<br><span class="tag-lbl">platforms used:</span> ${platforms.join(", ")}`;
+  if (bots.length) {
+    head += `<br><span class="tag-lbl">likely bot / fee wallets:</span> ` +
+      bots.slice(0, 5).map((r) => `<a href="https://solscan.io/account/${r.dest}" target="_blank" rel="noopener">${shortAddr(r.dest)}</a> (${r.count}×)`).join(", ") +
+      ` <span class="note">— recurring tiny fees, typical of BonkBot / Trojan / Photon / Maestro-style bots. Open on Solscan to identify.</span>`;
+  }
+  $("headline").innerHTML = head;
 
   const frag = document.createDocumentFragment();
-  rows.slice(0, 50).forEach((r, i) => {
+  rows.slice(0, 60).forEach((r, i) => {
     const pct = d.totalOut ? (r.lam / d.totalOut * 100) : 0;
     const el = document.createElement("div");
     el.className = "dest";
     el.innerHTML = `
       <span class="d-rank">${i + 1}</span>
       <span class="d-addr">
-        <a href="https://solscan.io/account/${r.dest}" target="_blank" rel="noopener">${shortAddr(r.dest)}</a>
+        <a href="https://solscan.io/account/${r.dest}" target="_blank" rel="noopener">${shortAddr(r.dest)}</a>${r.bot ? ' <span class="botflag">⚙ bot/fee?</span>' : ""}
         <span class="d-meta">${r.count} tx${r.count > 1 ? "s" : ""}${r.tok ? " · " + r.tok + " token xfer" : ""} · last ${fmtDate(r.last)}</span>
         <span class="d-bar"><span style="width:${Math.max(2, pct).toFixed(1)}%"></span></span>
       </span>
@@ -130,7 +146,7 @@ function render(addr, d) {
     frag.appendChild(el);
   });
   grid.appendChild(frag);
-  setStatus("Done — scanned " + d.scanned + " transactions.", "ok");
+  setStatus("Done — scanned " + d.scanned + " transactions." + (bots.length ? " " + bots.length + " likely bot/fee wallet(s) flagged." : ""), "ok");
 }
 
 window.addEventListener("DOMContentLoaded", () => {

@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Dev tools — sign/verify, SNS, ATA/PDA, rent</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="css/global.css?v=20260728" />
+  <link rel="stylesheet" href="css/devtools.css?v=20260728" />
+</head>
+
+<body>
+  <nav id="nav">
+    <span class="brand">solana toolkit</span>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle">
+    <label for="nav-toggle" class="nav-burger" aria-label="Toggle menu"><span></span><span></span><span></span></label>
+    <a href="index.html">home</a>
+    <a href="solwatcher.html">solwatcher</a>
+    <a href="vanity.html">vanity solana</a>
+    <a href="solwrapper.html">sol wrapper</a>
+    <a href="walletkeys.html">wallet keys</a>
+    <a href="incinerator.html">incinerator</a>
+    <a href="tracker.html">wallet tracker</a>
+    <a href="portfolio.html">portfolio</a>
+    <a href="multisender.html">multisender</a>
+    <a href="devtools.html" class="active">dev tools</a>
+    <div class="nav-dd" tabindex="0">
+      <span class="nav-dd-toggle">testing ▾</span>
+      <div class="nav-dd-menu">
+        <a href="eth_miner.html">eth miner</a>
+        <a href="sol_miner.html">sol miner</a>
+      </div>
+    </div>
+  </nav>
+
+  <div id="wrap">
+    <div class="watch-hero">
+      <h1>Dev tools</h1>
+      <p>Handy Solana utilities — prove wallet ownership, resolve .sol names, derive accounts and estimate rent.
+        All client-side.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Message — sign (Phantom)</div>
+      <textarea id="ms_msg" class="io" rows="2" placeholder="message to sign…"></textarea>
+      <div class="controls" style="margin:.5rem 0;"><button id="btn_sign">sign with Phantom</button></div>
+      <div id="ms_out" class="out"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Message — verify a signature</div>
+      <textarea id="mv_msg" class="io" rows="2" placeholder="original message…"></textarea>
+      <input id="mv_sig" type="text" placeholder="signature (base58)" style="width:100%;box-sizing:border-box;margin-top:.4rem;">
+      <input id="mv_pk" type="text" placeholder="signer public key (base58)" style="width:100%;box-sizing:border-box;margin-top:.4rem;">
+      <div class="controls" style="margin:.5rem 0;"><button id="btn_verify">verify</button></div>
+      <div id="mv_out" class="out"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">.sol resolver (SNS)</div>
+      <div class="controls">
+        <span class="ctl">domain <input id="sns_in" type="text" placeholder="e.g. bonfida" autocomplete="off"></span>
+        <span class="ctl">rpc (optional) <input id="sns_rpc" type="text" placeholder="https://your-rpc…" autocomplete="off"></span>
+        <button id="btn_sns">resolve →</button>
+      </div>
+      <div id="sns_out" class="out"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Associated token account (ATA) finder</div>
+      <div class="controls">
+        <span class="ctl">owner <input id="ata_owner" type="text" placeholder="wallet address"></span>
+        <span class="ctl">mint <input id="ata_mint" type="text" placeholder="mint address"></span>
+        <button id="btn_ata">derive →</button>
+      </div>
+      <div id="ata_out" class="out"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">PDA finder</div>
+      <div class="controls">
+        <span class="ctl">program id <input id="pda_prog" type="text" placeholder="program address"></span>
+        <button id="btn_pda">derive →</button>
+      </div>
+      <textarea id="pda_seeds" class="io" rows="3" placeholder="one seed per line — plain text, or pk:<pubkey> for an address seed"></textarea>
+      <div id="pda_out" class="out"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Rent calculator</div>
+      <div class="controls">
+        <span class="ctl">account size (bytes) <input id="rent_bytes" type="number" min="0" step="1" value="165"></span>
+        <button id="btn_rent">calc →</button>
+      </div>
+      <div id="rent_out" class="out"></div>
+      <div class="hint">165 = a standard SPL token account · 0 = an empty system account.</div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl.min.js"></script>
+  <script>window.nacl = window.nacl || nacl;</script>
+  <script src="https://unpkg.com/@solana/web3.js@1.95.8/lib/index.iife.min.js"></script>
+  <script src="js/devtools.js?v=20260728"></script>
+</body>
+
+</html>

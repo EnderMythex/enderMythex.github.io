@@ -68,6 +68,28 @@
 
 .headline:empty { display: none; }
 
+.headline .tag-lbl {
+  color: #888;
+  text-transform: uppercase;
+  font-size: .68rem;
+  letter-spacing: .08em;
+  margin-right: .3rem;
+}
+
+.headline .note {
+  color: #777;
+  font-size: .74rem;
+}
+
+.botflag {
+  border: 1px solid #555;
+  color: #fff;
+  font-size: .62rem;
+  padding: .02rem .3rem;
+  margin-left: .3rem;
+  white-space: nowrap;
+}
+
 .hint {
   color: #888;
   font-size: .78rem;

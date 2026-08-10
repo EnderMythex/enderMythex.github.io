@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Portfolio — wallet holdings & net worth</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="css/global.css?v=20260728" />
+  <link rel="stylesheet" href="css/portfolio.css?v=20260728" />
+</head>
+
+<body>
+  <nav id="nav">
+    <span class="brand">solana toolkit</span>
+    <input type="checkbox" id="nav-toggle" class="nav-toggle">
+    <label for="nav-toggle" class="nav-burger" aria-label="Toggle menu"><span></span><span></span><span></span></label>
+    <a href="index.html">home</a>
+    <a href="solwatcher.html">solwatcher</a>
+    <a href="vanity.html">vanity solana</a>
+    <a href="solwrapper.html">sol wrapper</a>
+    <a href="walletkeys.html">wallet keys</a>
+    <a href="incinerator.html">incinerator</a>
+    <a href="tracker.html">wallet tracker</a>
+    <a href="portfolio.html" class="active">portfolio</a>
+    <a href="multisender.html">multisender</a>
+    <a href="devtools.html">dev tools</a>
+    <div class="nav-dd" tabindex="0">
+      <span class="nav-dd-toggle">testing ▾</span>
+      <div class="nav-dd-menu">
+        <a href="eth_miner.html">eth miner</a>
+        <a href="sol_miner.html">sol miner</a>
+      </div>
+    </div>
+  </nav>
+
+  <div id="wrap">
+    <div class="watch-hero">
+      <h1>Portfolio</h1>
+      <p>Everything a wallet holds, valued in USD — tokens, SOL and NFT count, ranked by value.
+        Read-only, via the Helius DAS API.</p>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Wallet</div>
+      <div class="controls">
+        <span class="ctl">wallet address
+          <input id="in_addr" type="text" placeholder="paste any Solana wallet address…" autocomplete="off">
+        </span>
+        <span class="ctl">Helius API key
+          <input id="in_key" type="password" placeholder="Helius key or RPC URL" autocomplete="off">
+        </span>
+        <button id="btn_load">↳ load</button>
+      </div>
+      <div id="status"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-title">Holdings</div>
+      <div class="summary">
+        <span class="k">net worth</span><span class="v" id="s_net">—</span>
+        <span class="k">sol</span><span class="v" id="s_sol">—</span>
+        <span class="k">tokens</span><span class="v" id="s_tokens">—</span>
+        <span class="k">nfts</span><span class="v" id="s_nfts">—</span>
+      </div>
+      <div class="hold hold-head">
+        <span class="h-sym">asset</span><span class="h-bal">amount</span><span class="h-price">price</span><span class="h-val">value</span>
+      </div>
+      <div id="list">
+        <div class="empty">Enter a wallet + your Helius key, then load.</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="hint">
+        Prices come from Helius' DAS <code>getAssetsByOwner</code> (Jupiter-sourced) — some illiquid tokens have no
+        price and show "—". NFTs are counted, not valued. Read-only; your key is stored only in your browser.
+      </div>
+    </div>
+  </div>
+
+  <script src="js/portfolio.js?v=20260728"></script>
+</body>
+
+</html>

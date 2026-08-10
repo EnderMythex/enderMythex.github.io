@@ -1,0 +1,34 @@
+/* multisender.css — black & white */
+#wrap { padding: 2.5rem 1rem 3rem; }
+
+.watch-hero { margin: 1.4rem 0 1.4rem; }
+.watch-hero h1 { font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: bold; color: #fff; margin: 0 0 .5rem; }
+.watch-hero p { color: #9a9a9a; font-size: clamp(.85rem, 1.6vw, .95rem); line-height: 1.6; max-width: 66ch; margin: 0; }
+
+.row { display: grid; grid-template-columns: 6em 1fr; column-gap: 1rem; font-size: .82rem; margin-top: .8rem; }
+.row .k { color: #888; }
+.row .v { color: #fff; word-break: break-all; }
+
+#status { min-height: 1.3em; margin-top: .7rem; font-size: .8rem; color: #aaa; word-break: break-word; }
+#status.ok { color: #fff; }
+#status.err { color: #fff; font-weight: bold; }
+
+.hint { color: #888; font-size: .78rem; line-height: 1.7; }
+
+textarea.io {
+  width: 100%; box-sizing: border-box;
+  background: #0d0d0d; color: #fff; border: 1px solid #3a3a3a;
+  padding: .5rem .6rem; font-family: Consolas, monospace; font-size: .8rem; line-height: 1.5;
+  resize: vertical;
+}
+textarea.io:focus { outline: none; border-color: #888; }
+
+button.ghost { background: #1a1a1a; color: #aaa; border: 1px solid #333; }
+
+@media (max-width: 760px) {
+  #wrap { padding: 3.5rem .8rem 2rem; }
+  .controls { flex-direction: column; align-items: stretch; }
+  .ctl { width: 100%; }
+  .ctl input, .ctl select { width: 100% !important; box-sizing: border-box; }
+  .controls button { width: 100%; }
+}

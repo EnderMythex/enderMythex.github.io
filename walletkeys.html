@@ -5,8 +5,8 @@
   <meta charset="utf-8" />
   <title>Wallet keys — base58 ↔ byte array (Solana keyfile)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="css/global.css?v=20260727" />
-  <link rel="stylesheet" href="css/solwrapper.css?v=20260726" />
+  <link rel="stylesheet" href="css/global.css?v=20260728" />
+  <link rel="stylesheet" href="css/solwrapper.css?v=20260728" />
 </head>
 
 <body>
@@ -21,6 +21,9 @@
     <a href="walletkeys.html" class="active">wallet keys</a>
     <a href="incinerator.html">incinerator</a>
     <a href="tracker.html">wallet tracker</a>
+    <a href="portfolio.html">portfolio</a>
+    <a href="multisender.html">multisender</a>
+    <a href="devtools.html">dev tools</a>
     <div class="nav-dd" tabindex="0">
       <span class="nav-dd-toggle">testing ▾</span>
       <div class="nav-dd-menu">
@@ -73,9 +76,68 @@
       <div id="enc_info" class="hint"></div>
     </div>
 
+    <!-- Seed / keypair generator -->
+    <div class="panel">
+      <div class="panel-title">Generate a new wallet (BIP39 · m/44'/501'/0'/0')</div>
+      <div class="hint" style="margin-bottom:.5rem;">
+        Create a brand-new seed phrase and its Solana keypair, entirely offline in your browser
+        (same derivation Phantom uses). ⚠ Anyone with the phrase or secret key owns the wallet — save it safely,
+        never share it.
+      </div>
+      <div class="controls" style="margin:.4rem 0;">
+        <button id="btn_gen12">generate 12 words</button>
+        <button id="btn_gen24">generate 24 words</button>
+        <button id="btn_gen_copy" class="ghost">copy secret</button>
+      </div>
+      <textarea id="gen_mnemonic" class="io" rows="2" placeholder="seed phrase (mnemonic)" readonly></textarea>
+      <div id="gen_info" class="hint"></div>
+      <textarea id="gen_secret" class="io" rows="2" placeholder="base58 secret key (import into Phantom)" readonly style="margin-top:.4rem;"></textarea>
+    </div>
+
   </div>
 
-  <script src="js/walletkeys.js?v=20260726"></script>
+  <script src="js/walletkeys.js?v=20260728"></script>
+  <script type="module">
+    // BIP39 seed + Solana keypair generation (loaded lazily from esm.sh)
+    const $ = (id) => document.getElementById(id);
+    const B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+    function b58(bytes) {
+      const d = [0];
+      for (const by of bytes) { let c = by; for (let j = 0; j < d.length; j++) { c += d[j] << 8; d[j] = c % 58; c = (c / 58) | 0; } while (c) { d.push(c % 58); c = (c / 58) | 0; } }
+      let s = ""; for (const by of bytes) { if (by === 0) s += "1"; else break; }
+      for (let q = d.length - 1; q >= 0; q--) s += B58[d[q]];
+      return s;
+    }
+    async function gen(words) {
+      $("gen_info").textContent = "generating…"; $("gen_info").className = "hint";
+      try {
+        const [{ generateMnemonic, mnemonicToSeedSync }, { wordlist }, hd, naclMod] = await Promise.all([
+          import("https://esm.sh/@scure/bip39@1.2.1"),
+          import("https://esm.sh/@scure/bip39@1.2.1/wordlists/english"),
+          import("https://esm.sh/micro-ed25519-hdkey@0.1.2"),
+          import("https://esm.sh/tweetnacl@1.0.3"),
+        ]);
+        const nacl = naclMod.default || naclMod;
+        const HDKey = hd.HDKey || hd.default;
+        const mnemonic = generateMnemonic(wordlist, words === 24 ? 256 : 128);
+        const seed = mnemonicToSeedSync(mnemonic, "");
+        const dk = HDKey.fromMasterSeed(seed).derive("m/44'/501'/0'/0'");
+        const kp = nacl.sign.keyPair.fromSeed(dk.privateKey);
+        $("gen_mnemonic").value = mnemonic;
+        $("gen_secret").value = b58(kp.secretKey);
+        $("gen_info").innerHTML = "✔ public key: <code>" + b58(kp.publicKey) + "</code>";
+        $("gen_info").className = "hint ok";
+      } catch (e) {
+        $("gen_info").textContent = "Generation failed: " + (e.message || e);
+        $("gen_info").className = "hint err";
+      }
+    }
+    $("btn_gen12").addEventListener("click", () => gen(12));
+    $("btn_gen24").addEventListener("click", () => gen(24));
+    $("btn_gen_copy").addEventListener("click", () => {
+      const v = $("gen_secret").value; if (v) navigator.clipboard.writeText(v);
+    });
+  </script>
 </body>
 
 </html>

@@ -1,0 +1,35 @@
+/* devtools.css — black & white */
+#wrap { padding: 2.5rem 1rem 3rem; }
+
+.watch-hero { margin: 1.4rem 0 1.4rem; }
+.watch-hero h1 { font-size: clamp(1.6rem, 5vw, 2.4rem); font-weight: bold; color: #fff; margin: 0 0 .5rem; }
+.watch-hero p { color: #9a9a9a; font-size: clamp(.85rem, 1.6vw, .95rem); line-height: 1.6; max-width: 64ch; margin: 0; }
+
+.hint { color: #888; font-size: .76rem; line-height: 1.6; margin-top: .5rem; }
+
+textarea.io, input[type=text] {
+  background: #0d0d0d; color: #fff; border: 1px solid #3a3a3a;
+  font-family: Consolas, monospace; font-size: .8rem;
+}
+textarea.io { width: 100%; box-sizing: border-box; padding: .5rem .6rem; line-height: 1.5; resize: vertical; }
+
+.out {
+  white-space: pre-wrap;
+  word-break: break-all;
+  font-family: Consolas, monospace;
+  font-size: .8rem;
+  color: #ddd;
+  margin-top: .3rem;
+  min-height: 1em;
+}
+.out:empty { display: none; }
+.out.ok { color: #fff; }
+.out.err { color: #fff; font-weight: bold; }
+
+@media (max-width: 760px) {
+  #wrap { padding: 3.5rem .8rem 2rem; }
+  .controls { flex-direction: column; align-items: stretch; }
+  .ctl { width: 100%; }
+  .ctl input { width: 100% !important; box-sizing: border-box; }
+  .controls button { width: 100%; }
+}
