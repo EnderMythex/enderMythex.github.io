@@ -286,6 +286,30 @@ select option {
   color: #fff;
 }
 
+/* ── Page hero (shared header for tool pages) ────────────────────────── */
+.watch-hero {
+  margin: 1.4rem 0 1.4rem;
+}
+
+.watch-hero h1 {
+  font-size: clamp(1.6rem, 5vw, 2.4rem);
+  font-weight: bold;
+  color: #fff;
+  margin: 0 0 .5rem;
+}
+
+.watch-hero h1 .grad {
+  color: #fff;
+}
+
+.watch-hero p {
+  color: #9a9a9a;
+  font-size: clamp(.85rem, 1.6vw, .95rem);
+  line-height: 1.6;
+  max-width: 66ch;
+  margin: 0;
+}
+
 /* ── Section label ───────────────────────────────────────────────────── */
 .section-label {
   display: flex;

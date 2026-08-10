@@ -5,8 +5,8 @@
   <meta charset="utf-8" />
   <title>Wallet keys — base58 ↔ byte array (Solana keyfile)</title>
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" href="css/global.css?v=20260728" />
-  <link rel="stylesheet" href="css/solwrapper.css?v=20260728" />
+  <link rel="stylesheet" href="css/global.css?v=20260729" />
+  <link rel="stylesheet" href="css/solwrapper.css?v=20260729" />
 </head>
 
 <body>
@@ -34,6 +34,12 @@
   </nav>
 
   <div id="wrap">
+
+    <div class="watch-hero">
+      <h1>Wallet Keys</h1>
+      <p>Convert a wallet key between a Phantom base58 secret and the [..64 bytes..] Solana keyfile
+        format, and generate brand-new BIP39 keypairs — all in your browser, keys never leave the tab.</p>
+    </div>
 
     <div class="panel">
       <div class="hint">
@@ -96,7 +102,7 @@
 
   </div>
 
-  <script src="js/walletkeys.js?v=20260728"></script>
+  <script src="js/walletkeys.js?v=20260729"></script>
   <script type="module">
     // BIP39 seed + Solana keypair generation (loaded lazily from esm.sh)
     const $ = (id) => document.getElementById(id);
