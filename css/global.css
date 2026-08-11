@@ -345,6 +345,50 @@ select option {
   .pl-label { animation: none; background-position: 0 0; }
 }
 
+/* full-screen page-transition overlay */
+#page-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .15s ease;
+}
+
+#page-loader.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+#page-loader .pl-center {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+}
+
+#page-loader .pl-grid {
+  grid-template-columns: repeat(3, 9px);
+  gap: 3px;
+}
+
+#page-loader .pl-cell {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+}
+
+#page-loader .pl-label {
+  font-size: 15px;
+}
+
+#page-loader .pl-timer {
+  font-size: 13px;
+}
+
 /* ── Page hero (shared header for tool pages) ────────────────────────── */
 .watch-hero {
   margin: 1.4rem 0 1.4rem;
