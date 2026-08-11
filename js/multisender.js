@@ -11,7 +11,7 @@ let connection = null, walletAddr = null;
 
 function currentRpc() { const c = $("in_rpc").value.trim(); return c || RPCS[$("sel_net").value] || RPCS["mainnet-beta"]; }
 function getConn() { if (!connection) connection = new window.solanaWeb3.Connection(currentRpc(), "confirmed"); return connection; }
-function setStatus(m, c) { const e = $("status"); e.textContent = m; e.className = c || ""; }
+function setStatus(m, c) { if (window.hideLoader) window.hideLoader("status"); const e = $("status"); e.textContent = m; e.className = c || ""; }
 
 async function connectWallet() {
   if (!window.solana || !window.solana.isPhantom) throw new Error("Phantom not detected.");
@@ -135,12 +135,12 @@ async function send() {
       return tx;
     });
 
-    setStatus("Approve in Phantom — " + txs.length + " transaction(s)…");
+    const ld = window.showLoader ? window.showLoader("status", "Approve in Phantom — " + txs.length + " tx…") : null;
     const signed = await window.solana.signAllTransactions(txs);
     let ok = 0, pending = 0, err = 0;
     for (let i = 0; i < signed.length; i++) {
       const sig = await getConn().sendRawTransaction(signed[i].serialize());
-      setStatus("Sent " + (i + 1) + "/" + signed.length + " — confirming…");
+      if (ld) ld.setLabel("Sending " + (i + 1) + "/" + signed.length + "…"); else setStatus("Sent " + (i + 1) + "/" + signed.length + "…");
       const st = await pollConfirm(sig, blockhash, lastValidBlockHeight);
       if (st === "ok") ok++; else if (st === "err") err++; else pending++;
     }

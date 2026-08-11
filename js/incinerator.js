@@ -29,6 +29,7 @@ function getConnection() {
 function invalidateConnection() { connection = null; }
 
 function setStatus(msg, cls) {
+  if (window.hideLoader) window.hideLoader("status");
   const el = $("status");
   el.textContent = msg;
   el.className = cls || "";
@@ -146,12 +147,13 @@ async function scan() {
     const { PublicKey } = window.solanaWeb3;
     const owner = new PublicKey(walletAddr);
     const url = currentRpc();
-    setStatus("Scanning your token accounts…");
+    if (window.showLoader) window.showLoader("status", "Scanning token accounts…"); else setStatus("Scanning your token accounts…");
     accounts = /helius/i.test(url) ? await fetchHelius(walletAddr, url) : await fetchStandard(owner);
     // never list the same token account twice (closing it twice fails)
     const seen = new Set();
     accounts = accounts.filter((a) => (seen.has(a.pubkey) ? false : seen.add(a.pubkey)));
     renderList();
+    setStatus("Found " + accounts.length + " token account(s). Select and incinerate to reclaim rent.", "ok");
   } catch (e) {
     setStatus("Scan failed: " + (e.message || e) +
       " — public RPCs block token-account scans. Paste a free Helius RPC URL in custom rpc (it uses a lighter method that works).", "err");

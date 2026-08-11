@@ -286,6 +286,65 @@ select option {
   color: #fff;
 }
 
+/* ── Pixel-grid loader ───────────────────────────────────────────────── */
+.pixel-loader {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+}
+
+.pl-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 4px);
+  gap: 1.5px;
+}
+
+.pl-cell {
+  width: 4px;
+  height: 4px;
+  background: #fff;
+  border-radius: 1px;
+  opacity: .15;
+  animation: pixel-on 650ms ease-in-out infinite;
+}
+
+.pl-cell.round {
+  border-radius: 50%;
+}
+
+@keyframes pixel-on {
+  0%, 100% { opacity: .12; }
+  50% { opacity: 1; }
+}
+
+.pl-label {
+  font-size: 13px;
+  font-weight: 500;
+  background-image: linear-gradient(90deg, #666 35%, #fff 50%, #666 65%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: shimmer-text 1.4s linear infinite;
+}
+
+@keyframes shimmer-text {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+.pl-timer {
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  color: #888;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pl-cell { animation: none !important; opacity: .15; }
+  .pl-label { animation: none; background-position: 0 0; }
+}
+
 /* ── Page hero (shared header for tool pages) ────────────────────────── */
 .watch-hero {
   margin: 1.4rem 0 1.4rem;

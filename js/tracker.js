@@ -9,6 +9,7 @@ const $ = (id) => document.getElementById(id);
 let loading = false;
 
 function setStatus(msg, cls) {
+  if (window.hideLoader) window.hideLoader("status");
   const el = $("status");
   el.textContent = msg;
   el.className = cls || "";
@@ -54,8 +55,10 @@ async function track() {
     const sources = new Set();   // platforms Helius recognised (JUPITER, PUMP_FUN…)
     let inSol = 0, totalOut = 0, scanned = 0, before = null;
 
+    const ld = window.showLoader ? window.showLoader("status", "Scanning transactions…") : null;
     for (let p = 0; p < pages; p++) {
-      setStatus("Scanning transactions… page " + (p + 1) + "/" + pages + " (" + scanned + " so far)");
+      if (ld) ld.setLabel("Scanning · page " + (p + 1) + "/" + pages + " · " + scanned + " tx");
+      else setStatus("Scanning transactions… page " + (p + 1) + "/" + pages);
       const txs = await fetchPage(addr, key, before);
       if (!txs.length) break;
       for (const tx of txs) {

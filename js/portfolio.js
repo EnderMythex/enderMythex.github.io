@@ -4,7 +4,7 @@ const KEY_LS = "toolkit_helius_key";
 const $ = (id) => document.getElementById(id);
 let loading = false;
 
-function setStatus(m, c) { const e = $("status"); e.textContent = m; e.className = c || ""; }
+function setStatus(m, c) { if (window.hideLoader) window.hideLoader("status"); const e = $("status"); e.textContent = m; e.className = c || ""; }
 function extractKey(s) { s = (s || "").trim(); const m = s.match(/api-key=([A-Za-z0-9-]+)/); return m ? m[1] : s; }
 function usd(n) { n = Number(n) || 0; return "$" + n.toLocaleString("en-US", { maximumFractionDigits: 2 }); }
 function amt(n) { n = Number(n) || 0; return n.toLocaleString("en-US", { maximumFractionDigits: 4 }); }
@@ -21,7 +21,7 @@ async function load() {
     if (!key) { setStatus("Paste your Helius API key (or RPC URL).", "err"); return; }
     try { localStorage.setItem(KEY_LS, key); } catch (e) {}
 
-    setStatus("Loading holdings…");
+    if (window.showLoader) window.showLoader("status", "Loading holdings…"); else setStatus("Loading holdings…");
     const body = {
       jsonrpc: "2.0", id: "pf", method: "getAssetsByOwner",
       params: { ownerAddress: addr, page: 1, limit: 1000, displayOptions: { showFungible: true, showNativeBalance: true } },
