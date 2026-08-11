@@ -83,6 +83,8 @@
   function hidePage() { const o = document.getElementById("page-loader"); if (o) o.classList.remove("show"); }
   window.showPageLoader = showPage;
 
+  var MIN_MS = 1500; // keep the loader on screen at least this long
+
   document.addEventListener("click", (e) => {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     const a = e.target.closest && e.target.closest("a");
@@ -91,7 +93,13 @@
     if (a.target === "_blank" || a.hasAttribute("download")) return;
     if (!href || href.startsWith("#") || /^(https?:|mailto:|tel:)/i.test(href)) return;
     if (!/\.html($|[?#])/i.test(href)) return; // only same-site page switches
-    showPage();
+    const dest = a.href;                        // absolute URL
+    if (dest === window.location.href) return;   // clicking the current page
+    e.preventDefault();
+    showPage();                                 // fades in via CSS
+    // hold the visual for MIN_MS, then navigate (the overlay keeps covering
+    // the old page until the new one paints)
+    setTimeout(() => { window.location.href = dest; }, MIN_MS);
   }, true);
 
   // clear the overlay when arriving (incl. back/forward bfcache restores)

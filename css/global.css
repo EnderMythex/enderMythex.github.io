@@ -356,7 +356,7 @@ select option {
   background: #000;
   opacity: 0;
   visibility: hidden;
-  transition: opacity .15s ease;
+  transition: opacity .28s ease, visibility .28s ease;
 }
 
 #page-loader.show {
