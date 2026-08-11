@@ -62,46 +62,4 @@
   };
 
   window.createLoader = createLoader;
-
-  // ── Full-screen page-transition loader ────────────────────────────────
-  // Shows a centered loader while navigating to another page of the site,
-  // and clears it when the new page is shown.
-  function overlay() {
-    let o = document.getElementById("page-loader");
-    if (!o) {
-      o = document.createElement("div");
-      o.id = "page-loader";
-      const box = document.createElement("div");
-      box.className = "pl-center";
-      box.appendChild(createLoader("Loading"));
-      o.appendChild(box);
-      (document.body || document.documentElement).appendChild(o);
-    }
-    return o;
-  }
-  function showPage() { overlay().classList.add("show"); }
-  function hidePage() { const o = document.getElementById("page-loader"); if (o) o.classList.remove("show"); }
-  window.showPageLoader = showPage;
-
-  var MIN_MS = 1500; // keep the loader on screen at least this long
-
-  document.addEventListener("click", (e) => {
-    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
-    const a = e.target.closest && e.target.closest("a");
-    if (!a) return;
-    const href = a.getAttribute("href") || "";
-    if (a.target === "_blank" || a.hasAttribute("download")) return;
-    if (!href || href.startsWith("#") || /^(https?:|mailto:|tel:)/i.test(href)) return;
-    if (!/\.html($|[?#])/i.test(href)) return; // only same-site page switches
-    const dest = a.href;                        // absolute URL
-    if (dest === window.location.href) return;   // clicking the current page
-    e.preventDefault();
-    showPage();                                 // fades in via CSS
-    // hold the visual for MIN_MS, then navigate (the overlay keeps covering
-    // the old page until the new one paints)
-    setTimeout(() => { window.location.href = dest; }, MIN_MS);
-  }, true);
-
-  // clear the overlay when arriving (incl. back/forward bfcache restores)
-  window.addEventListener("pageshow", hidePage);
 })();

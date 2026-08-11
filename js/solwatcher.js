@@ -268,6 +268,7 @@ function buildCard(r) {
 }
 
 function render(records) {
+  if (window.hideLoader) window.hideLoader("status");
   const threshold = Number($("in_min").value) || 0;
   const minLiq = Number($("in_liq").value) || 0;
   const minFees = Number($("in_fees").value) || 0;
@@ -310,8 +311,9 @@ async function refresh() {
   if (loading) return;
   loading = true;
   $("btn_refresh").disabled = true;
-  if (!$("grid").children.length) $("status").textContent = "Loading pump.fun graduates…";
-  $("status").className = "";
+  // show the loader only when there's no list yet (avoid flicker on auto-refresh)
+  if (!$("grid").children.length && window.showLoader) window.showLoader("status", "Loading pump.fun graduates…");
+  else $("status").className = "";
   try {
     const pages = Math.min(10, Math.max(0, Number($("in_pages").value) || 0));
     // Reliable primary discovery (DexScreener) + optional GeckoTerminal breadth.
@@ -332,6 +334,7 @@ async function refresh() {
     lastRecords = records;
     render(records);
   } catch (e) {
+    if (window.hideLoader) window.hideLoader("status");
     $("status").textContent = "Error: " + (e.message || e) +
       " — the free APIs are rate-limited; try again shortly.";
     $("status").className = "err";

@@ -374,6 +374,7 @@ function startGen() {
           running = false;
           $("btn_start").disabled = false;
           $("btn_stop").disabled = true;
+          if (window.hideLoader) window.hideLoader("status");
           setStatus("✓ " + foundAcc + " match(es) found — stopped.");
         }
       }
@@ -386,6 +387,7 @@ function startGen() {
   running = true;
   $("btn_start").disabled = true;
   $("btn_stop").disabled = false;
+  if (window.showLoader) window.showLoader("status", "Grinding · " + N + " threads");
   setStatus("searching · " + N + " threads · prefix='" + prefix + "' suffix='" + suffix + "' case=" + caseMode);
 }
 
@@ -395,6 +397,7 @@ function stopGen() {
   running = false;
   $("btn_start").disabled = false;
   $("btn_stop").disabled = true;
+  if (window.hideLoader) window.hideLoader("status");
   setStatus("⏹ stopped.");
 }
 
