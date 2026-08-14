@@ -229,22 +229,30 @@ async function incinerate() {
     const { PublicKey, Transaction } = window.solanaWeb3;
     const conn = getConnection();
     const owner = new PublicKey(walletAddr);
-    // close-only accounts are tiny → pack many per tx (fewer tx = Phantom can
-    // simulate and show the safe preview). Burns are bigger, so use small groups.
-    const per = willBurn.length ? 5 : 12;
-    const groups = chunk(sel, per);
     const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash("confirmed");
 
-    const txs = groups.map((g) => {
-      const tx = new Transaction();
-      g.forEach((a) => {
-        if (a.mint !== WSOL && BigInt(a.amountRaw) > 0n) tx.add(burnIx(a.pubkey, a.mint, owner, a.amountRaw, a.pid));
-        tx.add(closeIx(a.pubkey, owner, a.pid));
-      });
-      tx.feePayer = owner;
-      tx.recentBlockhash = blockhash;
-      return tx;
-    });
+    // Pack as many accounts per tx as fit under the 1232-byte limit — fewer
+    // transactions means Phantom can actually simulate & show the safe preview
+    // (multi-tx bundles fail simulation). We add instructions greedily and start
+    // a new tx only when the serialized message would get too big.
+    const MAX_MSG = 1100; // safe margin below the 1232 wire limit (minus signature)
+    const ixsFor = (a) => {
+      const out = [];
+      if (a.mint !== WSOL && BigInt(a.amountRaw) > 0n) out.push(burnIx(a.pubkey, a.mint, owner, a.amountRaw, a.pid));
+      out.push(closeIx(a.pubkey, owner, a.pid));
+      return out;
+    };
+    const mkTx = (ixs) => { const tx = new Transaction(); ixs.forEach((x) => tx.add(x)); tx.feePayer = owner; tx.recentBlockhash = blockhash; return tx; };
+    const msgLen = (ixs) => { try { return mkTx(ixs).serializeMessage().length; } catch (e) { return 1e9; } };
+
+    const txs = [];
+    let cur = [];
+    for (const a of sel) {
+      const next = cur.concat(ixsFor(a));
+      if (cur.length && msgLen(next) > MAX_MSG) { txs.push(mkTx(cur)); cur = ixsFor(a); }
+      else cur = next;
+    }
+    if (cur.length) txs.push(mkTx(cur));
 
     setStatus("Approve in Phantom — " + txs.length + " transaction(s)…");
     const signed = await window.solana.signAllTransactions(txs);
